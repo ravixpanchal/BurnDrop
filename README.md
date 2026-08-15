@@ -201,18 +201,22 @@ Copy `.env.example` to `.env` and configure:
 | `GOOGLE_CLIENT_ID` | OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret |
 | `GOOGLE_REFRESH_TOKEN` | OAuth refresh token |
+| `EMAIL_SERVICE` | Email driver (`smtp`, `gmail`, `resend`, `sendgrid`, `brevo`) |
 | `EMAIL_FROM` | Sender email address |
-| `EMAIL_USERNAME` | SMTP username |
-| `EMAIL_PASSWORD` | Gmail App Password (never commit!) |
+| `EMAIL_USERNAME` | SMTP username (used for `smtp` service) |
+| `EMAIL_PASSWORD` | SMTP password (used for `smtp` service) |
+| `RESEND_API_KEY` | Resend API key (used for `resend` service) |
+| `SENDGRID_API_KEY` | SendGrid API key (used for `sendgrid` service) |
+| `BREVO_API_KEY` | Brevo API key (used for `brevo` service) |
 
 > When using Docker, `DATABASE_URL` and `REDIS_URL` in `docker-compose.yml` override `.env` automatically — you do not need to change them.
 
 ---
 
-## Google Drive Setup
+## Google Drive & Gmail API Setup
 
 1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable the **Google Drive API**
+2. Enable both the **Google Drive API** and the **Gmail API**
 3. Create **OAuth 2.0 credentials** (Web application)
 4. Add this **Authorized redirect URI**:
 
@@ -223,7 +227,9 @@ Copy `.env.example` to `.env` and configure:
 5. Open [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground)
 6. Click the gear icon → enable **Use your own OAuth credentials**
 7. Enter your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-8. Select scope: `https://www.googleapis.com/auth/drive.file`
+8. Select or enter scopes:
+   - For Drive storage: `https://www.googleapis.com/auth/drive.file`
+   - For Gmail sending (HTTP): `https://www.googleapis.com/auth/gmail.send`
 9. Click **Authorize APIs** → **Exchange authorization code for tokens**
 10. Copy the **Refresh token** into `.env` as `GOOGLE_REFRESH_TOKEN`
 11. Share the target folder (`1Q-g7HQtJRIiyoUAiiRRcZxPLy9ZtijP8`) with your Google account — keep it **private**
@@ -240,19 +246,54 @@ STORAGE_BACKEND=google_drive
 
 ---
 
-## Email Setup (Gmail)
+## Email Setup Options
 
-1. Enable 2-Factor Authentication on your Google account
-2. Generate an [App Password](https://myaccount.google.com/apppasswords)
-3. Configure in `.env`:
+You can send emails using direct SMTP, Google Gmail API, or HTTP-based delivery APIs (Resend, SendGrid, Brevo). Configure `.env` depending on your selected driver:
+
+### 1. Gmail API (Recommended for Free Tier Deployments)
+Bypasses outbound SMTP port blocks on hosting providers (like Render Free tier). Requires client credentials configured in the Google API Setup step above:
 
 ```env
-EMAIL_FROM=ravi.panchal.kaithi@gmail.com
-EMAIL_USERNAME=ravi.panchal.kaithi@gmail.com
-EMAIL_PASSWORD=your-app-password
+EMAIL_SERVICE=gmail
+EMAIL_FROM=your-gmail-address@gmail.com
 ```
 
-> Never commit `.env` or place passwords in source code. Uploads work even if email delivery fails — the code is always shown on screen.
+### 2. Resend (HTTP API)
+Great for custom domain name delivery over HTTP:
+
+```env
+EMAIL_SERVICE=resend
+EMAIL_FROM=noreply@yourdomain.com
+RESEND_API_KEY=re_your_api_key
+```
+
+### 3. SendGrid (HTTP API)
+```env
+EMAIL_SERVICE=sendgrid
+EMAIL_FROM=noreply@yourdomain.com
+SENDGRID_API_KEY=your_sendgrid_api_key
+```
+
+### 4. Brevo (HTTP API)
+```env
+EMAIL_SERVICE=brevo
+EMAIL_FROM=noreply@yourdomain.com
+BREVO_API_KEY=your_brevo_api_key
+```
+
+### 5. SMTP (Gmail/Custom SMTP)
+Standard SMTP delivery (Note: Port 587 and 465 are blocked on Render Free tier):
+
+```env
+EMAIL_SERVICE=smtp
+EMAIL_FROM=your-email@gmail.com
+EMAIL_USERNAME=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_SMTP_HOST=smtp.gmail.com
+EMAIL_SMTP_PORT=587
+```
+
+> Never commit `.env` or place passwords/API keys in source code. Uploads work even if email delivery fails — the code is always shown on screen.
 
 ---
 
