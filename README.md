@@ -345,16 +345,6 @@ See [SECURITY.md](SECURITY.md) for responsible disclosure.
 
 MIT License — see [LICENSE](LICENSE).
 
-## Roadmap
-
-- [ ] AWS S3 / Cloudflare R2 storage backends
-- [ ] Password-protected shares
-- [ ] Custom expiration times
-- [ ] QR code generation
-- [ ] Resumable downloads
-- [ ] CAPTCHA for upload abuse prevention
-- [ ] PWA support
-
 ---
 
 Made with ♥ by Ravi Panchal. All rights reserved @2026.
