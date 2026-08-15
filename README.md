@@ -347,4 +347,4 @@ MIT License — see [LICENSE](LICENSE).
 
 ---
 
-Made with ♥ by Ravi Panchal. All rights reserved @2026.
+Made with ♥ by Ravi Panchal. All Rights Reserved @2026.
