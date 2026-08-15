@@ -59,19 +59,111 @@ Open {app_name}: {retrieve_url}
     return subject, text, html  # type: ignore[return-value]
 
 
-async def send_share_code_email(to_email: str, code: str) -> bool:
-    settings = get_settings()
+async def _send_via_resend(to_email: str, subject: str, html: str, settings) -> bool:
+    if not settings.resend_api_key:
+        logger.warning("Resend API key not configured; skipping email send")
+        return False
 
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {settings.resend_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": settings.email_from,
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html,
+                },
+                timeout=10.0,
+            )
+            if response.status_code in (200, 201):
+                return True
+            logger.error("Resend API failed: Status %s, Response: %s", response.status_code, response.text)
+            return False
+    except Exception:
+        logger.exception("Failed to send email to %s via Resend API", to_email)
+        return False
+
+
+async def _send_via_sendgrid(to_email: str, subject: str, text: str, html: str, settings) -> bool:
+    if not settings.sendgrid_api_key:
+        logger.warning("SendGrid API key not configured; skipping email send")
+        return False
+
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                headers={
+                    "Authorization": f"Bearer {settings.sendgrid_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "personalizations": [
+                        {
+                            "to": [{"email": to_email}]
+                        }
+                    ],
+                    "from": {"email": settings.email_from},
+                    "subject": subject,
+                    "content": [
+                        {"type": "text/plain", "value": text},
+                        {"type": "text/html", "value": html},
+                    ],
+                },
+                timeout=10.0,
+            )
+            if response.status_code in (200, 202):
+                return True
+            logger.error("SendGrid API failed: Status %s, Response: %s", response.status_code, response.text)
+            return False
+    except Exception:
+        logger.exception("Failed to send email to %s via SendGrid API", to_email)
+        return False
+
+
+async def _send_via_brevo(to_email: str, subject: str, html: str, settings) -> bool:
+    if not settings.brevo_api_key:
+        logger.warning("Brevo API key not configured; skipping email send")
+        return False
+
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": settings.brevo_api_key,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                json={
+                    "sender": {"email": settings.email_from},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html,
+                },
+                timeout=10.0,
+            )
+            if response.status_code in (200, 201, 202):
+                return True
+            logger.error("Brevo API failed: Status %s, Response: %s", response.status_code, response.text)
+            return False
+    except Exception:
+        logger.exception("Failed to send email to %s via Brevo API", to_email)
+        return False
+
+
+async def _send_via_smtp(to_email: str, subject: str, text: str, html: str, settings) -> bool:
     if not settings.email_password:
         logger.warning("Email password not configured; skipping email send")
         return False
-
-    subject, text, html = render_share_email(
-        code=code,
-        app_name=settings.app_name,
-        app_base_url=settings.app_base_url,
-        expiration_hours=settings.file_expiration_hours,
-    )
 
     message = MIMEMultipart("alternative")
     message["From"] = settings.email_from
@@ -97,3 +189,27 @@ async def send_share_code_email(to_email: str, code: str) -> bool:
     except Exception:
         logger.exception("Failed to send email to %s via %s:%s", to_email, settings.email_smtp_host, settings.email_smtp_port)
         return False
+
+
+async def send_share_code_email(to_email: str, code: str) -> bool:
+    settings = get_settings()
+    service_type = settings.email_service.lower().strip()
+
+    subject, text, html = render_share_email(
+        code=code,
+        app_name=settings.app_name,
+        app_base_url=settings.app_base_url,
+        expiration_hours=settings.file_expiration_hours,
+    )
+
+    if service_type == "resend":
+        return await _send_via_resend(to_email, subject, html, settings)
+    elif service_type == "sendgrid":
+        return await _send_via_sendgrid(to_email, subject, text, html, settings)
+    elif service_type == "brevo":
+        return await _send_via_brevo(to_email, subject, html, settings)
+    else:
+        return await _send_via_smtp(to_email, subject, text, html, settings)
+
+
+

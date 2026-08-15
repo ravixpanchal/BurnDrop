@@ -3,7 +3,7 @@
 from functools import lru_cache
 
 from pathlib import Path
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -52,11 +52,27 @@ class Settings(BaseSettings):
     email_smtp_host: str = "smtp.gmail.com"
     email_smtp_port: int = 587
 
+    email_service: str = "smtp"
+    resend_api_key: str = ""
+    sendgrid_api_key: str = ""
+    brevo_api_key: str = ""
+
     instagram_url: str = ""
     x_url: str = ""
     linkedin_url: str = ""
     github_url: str = ""
     contact_email: str = "ravi.panchal.kaithi@gmail.com"
+
+    @model_validator(mode="after")
+    def auto_detect_email_service(self) -> "Settings":
+        if self.email_service == "smtp":
+            if self.resend_api_key:
+                self.email_service = "resend"
+            elif self.sendgrid_api_key:
+                self.email_service = "sendgrid"
+            elif self.brevo_api_key:
+                self.email_service = "brevo"
+        return self
 
     @property
     def max_file_size_bytes(self) -> int:
