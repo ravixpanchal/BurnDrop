@@ -191,6 +191,46 @@ async def _send_via_smtp(to_email: str, subject: str, text: str, html: str, sett
         return False
 
 
+async def _send_via_gmail_api(to_email: str, subject: str, text: str, html: str, settings) -> bool:
+    if not settings.google_refresh_token or not settings.google_client_id or not settings.google_client_secret:
+        logger.warning("Google credentials not fully configured; skipping Gmail API email send")
+        return False
+
+    import base64
+    from email.message import EmailMessage
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+
+    try:
+        creds = Credentials(
+            token=None,
+            refresh_token=settings.google_refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=settings.google_client_id,
+            client_secret=settings.google_client_secret,
+        )
+        import asyncio
+        loop = asyncio.get_running_loop()
+
+        def _send():
+            service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+            message = EmailMessage()
+            message.set_content(text)
+            message.add_alternative(html, subtype="html")
+            message["To"] = to_email
+            message["From"] = settings.email_from
+            message["Subject"] = subject
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
+            body = {"raw": raw_message}
+            service.users().messages().send(userId="me", body=body).execute()
+            return True
+
+        return await loop.run_in_executor(None, _send)
+    except Exception:
+        logger.exception("Failed to send email to %s via Gmail API", to_email)
+        return False
+
+
 async def send_share_code_email(to_email: str, code: str) -> bool:
     settings = get_settings()
     service_type = settings.email_service.lower().strip()
@@ -208,6 +248,8 @@ async def send_share_code_email(to_email: str, code: str) -> bool:
         return await _send_via_sendgrid(to_email, subject, text, html, settings)
     elif service_type == "brevo":
         return await _send_via_brevo(to_email, subject, html, settings)
+    elif service_type == "gmail":
+        return await _send_via_gmail_api(to_email, subject, text, html, settings)
     else:
         return await _send_via_smtp(to_email, subject, text, html, settings)
 
