@@ -3,6 +3,7 @@
 from functools import lru_cache
 
 from pathlib import Path
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -27,6 +28,13 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://burndrop:burndrop@localhost:5432/burndrop"
     redis_url: str = "redis://localhost:6379/0"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def assemble_db_url(cls, v: str) -> str:
+        if v and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     max_file_size_mb: int = 1024
     file_expiration_hours: int = 3
