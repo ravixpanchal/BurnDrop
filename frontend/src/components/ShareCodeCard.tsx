@@ -55,7 +55,7 @@ export function ShareCodeCard({ code, expiresAt, emailSent, filename, sizeBytes,
 
       {/* HIGHLIGHTED ONE-TIME CODE BOX */}
       <div className="my-4 xs:my-6 relative mx-auto max-w-md rounded-2xl border-2 border-emerald-500/50 bg-gradient-to-b from-white to-emerald-50/80 p-3.5 xs:p-5 sm:p-6 shadow-xl shadow-emerald-500/10 backdrop-blur-sm group hover:border-emerald-500 transition-all">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 border border-emerald-300 px-3 py-0.5 xs:px-3.5 xs:py-1 text-[10px] xs:text-[11px] font-bold uppercase tracking-wider text-emerald-800 shadow-2xs mb-2 xs:mb-3">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 border border-emerald-300 px-3 py-0.5 xs:px-3.5 xs:py-1 text-[10px] xs:text-[11px] font-bold uppercase tracking-wider text-emerald-800 shadow-sm mb-2 xs:mb-3">
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
           One-Time Code
         </div>
@@ -83,7 +83,7 @@ export function ShareCodeCard({ code, expiresAt, emailSent, filename, sizeBytes,
       {/* SPAM FOLDER ALERT BOX */}
       <div className="my-4 xs:my-5 rounded-2xl bg-amber-50/90 border-2 border-amber-400/80 p-3.5 xs:p-4 sm:p-5 text-xs sm:text-sm text-amber-950 text-center shadow-sm">
         <div className="flex items-center justify-center gap-2 font-bold text-amber-900 text-xs xs:text-sm sm:text-base">
-          <svg className="h-4.5 w-4.5 xs:h-5 xs:w-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-amber-600 shrink-0" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           <span>Check Your Spam Folder</span>
@@ -109,14 +109,14 @@ export function ShareCodeCard({ code, expiresAt, emailSent, filename, sizeBytes,
         >
           {copied ? (
             <>
-              <svg className="h-5 w-5 text-emerald-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-emerald-300 shrink-0" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
               <span>Copied to Clipboard!</span>
             </>
           ) : (
             <>
-              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 shrink-0" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
               <span>Copy Code</span>
@@ -126,8 +126,8 @@ export function ShareCodeCard({ code, expiresAt, emailSent, filename, sizeBytes,
       </div>
 
       {/* Security Disclaimer Note */}
-      <div className="mt-5 xs:mt-6 inline-flex flex-col xs:flex-row items-center gap-2 rounded-xl bg-amber-50/80 border border-amber-200/80 px-3.5 xs:px-4 py-2 xs:py-2.5 text-[11px] xs:text-xs text-amber-800 font-medium text-center">
-        <svg className="h-4 w-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="mt-5 xs:mt-6 inline-flex flex-col xs:flex-row items-center justify-center gap-2 rounded-xl bg-amber-50/80 border border-amber-200/80 px-3.5 xs:px-4 py-2 xs:py-2.5 text-[11px] xs:text-xs text-amber-800 font-medium text-center max-w-full">
+        <svg className="h-4 w-4 text-amber-600 shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <span>Anyone with this code can access your file. Do not share it publicly.</span>
@@ -138,7 +138,7 @@ export function ShareCodeCard({ code, expiresAt, emailSent, filename, sizeBytes,
 
 function CheckIcon() {
   return (
-    <svg className="h-4 w-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 text-emerald-600 shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -146,7 +146,7 @@ function CheckIcon() {
 
 function WarnIcon() {
   return (
-    <svg className="h-4 w-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 text-amber-600 shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
   );

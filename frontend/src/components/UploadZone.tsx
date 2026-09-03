@@ -130,7 +130,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
                 <div className="min-w-0 flex-1 flex items-center gap-2 xs:gap-3">
                   <span
                     className={clsx(
-                      'shrink-0 rounded-lg border px-1.5 xs:px-2 py-0.5 xs:py-1 text-[10px] xs:text-[11px] font-extrabold uppercase tracking-wider shadow-2xs',
+                      'shrink-0 rounded-lg border px-1.5 xs:px-2 py-0.5 xs:py-1 text-[10px] xs:text-[11px] font-extrabold uppercase tracking-wider shadow-xs',
                       getBadgeColor(file.name),
                     )}
                   >

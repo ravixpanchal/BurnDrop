@@ -108,7 +108,7 @@ function FileReadyView({
         <button
           type="button"
           onClick={onBack}
-          className="group inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all hover:scale-105 active:scale-95"
+          className="group inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all hover:scale-105 active:scale-95"
         >
           <svg className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -117,13 +117,13 @@ function FileReadyView({
         </button>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200/80 bg-blue-50/90 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200/80 bg-blue-50/90 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm">
             <svg className="h-3.5 w-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Expires: <span className="font-mono">{countdown}</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300/80 bg-emerald-100/90 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-800 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300/80 bg-emerald-100/90 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-800 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Valid OTP
           </span>
@@ -169,7 +169,7 @@ function FileReadyView({
             >
               <div className="min-w-0 flex-1 flex items-center gap-2.5 xs:gap-3">
                 <span
-                  className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider shadow-2xs ${getBadgeColor(
+                  className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider shadow-xs ${getBadgeColor(
                     file.filename,
                   )}`}
                 >
@@ -190,7 +190,7 @@ function FileReadyView({
                   <button
                     onClick={() => handleViewSingle(file.id)}
                     disabled={downloadingAll || downloadingId !== null}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-700 shadow-2xs hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition-all disabled:opacity-50 min-h-[40px] sm:min-h-[36px]"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-700 shadow-xs hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition-all disabled:opacity-50 min-h-[40px] sm:min-h-[36px]"
                   >
                     <svg className="h-3.5 w-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -216,7 +216,7 @@ function FileReadyView({
       </div>
 
       {/* Info Expiration Note Banner */}
-      <div className="relative z-10 mt-5 rounded-2xl bg-blue-50/80 border border-blue-200/80 p-3.5 text-center text-xs text-slate-600 font-medium flex flex-col xs:flex-row items-center justify-center gap-2 shadow-2xs">
+      <div className="relative z-10 mt-5 rounded-2xl bg-blue-50/80 border border-blue-200/80 p-3.5 text-center text-xs text-slate-600 font-medium flex flex-col xs:flex-row items-center justify-center gap-2 shadow-xs">
         <svg className="h-4 w-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>

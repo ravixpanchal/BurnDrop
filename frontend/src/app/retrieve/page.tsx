@@ -19,7 +19,7 @@ export default function RetrievePage() {
       <Header />
       <main className="mx-auto w-full max-w-xl flex-1 px-3 xs:px-4 sm:px-6 lg:px-8 py-5 sm:py-12 relative z-10">
         <section className="mb-6 sm:mb-8 text-center">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 px-3.5 py-1 text-[11px] xs:text-xs font-semibold text-blue-700 shadow-2xs">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 px-3.5 py-1 text-[11px] xs:text-xs font-semibold text-blue-700 shadow-xs">
             <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
             <span>🔒 Encrypted One-Time Transfer</span>
           </div>

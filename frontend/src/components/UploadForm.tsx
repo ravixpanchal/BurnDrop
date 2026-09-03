@@ -95,7 +95,7 @@ export function UploadForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="friend@example.com"
-            className="w-full rounded-xl xs:rounded-2xl border border-slate-300/90 bg-white/90 pl-10 xs:pl-11 pr-4 py-2.5 xs:py-3 text-xs xs:text-sm sm:text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 shadow-2xs min-h-[44px]"
+            className="w-full rounded-xl xs:rounded-2xl border border-slate-300/90 bg-white/90 pl-10 xs:pl-11 pr-4 py-2.5 xs:py-3 text-xs xs:text-sm sm:text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 shadow-xs min-h-[44px]"
             disabled={state === 'uploading'}
             required
           />
