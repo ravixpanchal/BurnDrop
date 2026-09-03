@@ -13,46 +13,142 @@ logger = logging.getLogger(__name__)
 
 def render_share_email(code: str, app_name: str, app_base_url: str, expiration_hours: int) -> tuple[str, str, str]:
     retrieve_url = f"{app_base_url.rstrip('/')}/retrieve"
-    subject = f"Your {app_name} one-time code: {code}"
+    subject = f"🔐 Your {app_name} One-Time Access Code: {code}"
 
-    text = f"""Thanks for using {app_name}.
+    text = f"""Thanks for using {app_name}!
 
-Your one-time unique code is: {code}
+Your One-Time Access Code is: {code}
 
-Do not share this code with anyone you do not trust. If you share this code with someone else, they may be able to access your data. We are not responsible for unauthorized access resulting from sharing the code.
+Direct Retrieval Link: {retrieve_url}
 
-Please note that your data will be automatically deleted within {expiration_hours} hours. Please use the service within this time.
+IMPORTANT DETAILS:
+- Valid for {expiration_hours} hours only.
+- Single-use access (file auto-destructs after consumption).
+- If you didn't receive this email directly in your inbox, please check your Spam/Junk folder.
+- Do not share this code publicly or with unauthorized persons.
 
-This code can be successfully used only once.
-
-Open {app_name}: {retrieve_url}
+Powered by {app_name} - Share once • Keep it temporary.
 """
 
     html = f"""<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 40px 20px;">
-  <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-    <h1 style="margin: 0 0 4px; font-size: 24px; color: #0f172a;">{app_name}</h1>
-    <p style="margin: 0 0 32px; color: #64748b; font-size: 14px;">Share once. Keep it temporary.</p>
-    <p style="color: #334155; line-height: 1.6;">Thanks for using our service.</p>
-    <p style="color: #334155; line-height: 1.6;">Your one-time unique code is:</p>
-    <div style="background: #f1f5f9; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
-      <span style="font-size: 28px; font-weight: 700; letter-spacing: 4px; color: #0f172a; font-family: monospace;">{code}</span>
-    </div>
-    <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-      Do not share this code with anyone you do not trust. If you share this code with someone else, they may be able to access your data. We are not responsible for unauthorized access resulting from sharing the code.
-    </p>
-    <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-      Please note that your data will be automatically deleted within {expiration_hours} hours. Please use the service within this time.
-    </p>
-    <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-      This code can be successfully used only once.
-    </p>
-    <div style="text-align: center; margin-top: 32px;">
-      <a href="{retrieve_url}" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600;">Open {app_name}</a>
-    </div>
-  </div>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your {app_name} Access Code</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04); border: 1px solid #e2e8f0;">
+          
+          <!-- BRAND TOP ACCENT BAR -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%); height: 8px; font-size: 0; line-height: 0;">&nbsp;</td>
+          </tr>
+
+          <!-- HEADER SECTION -->
+          <tr>
+            <td style="padding: 36px 36px 24px 36px; text-align: center;">
+              <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 14px; width: 44px; height: 44px; text-align: center; vertical-align: middle; color: #ffffff; font-size: 22px; line-height: 44px; font-weight: bold;">
+                    🔥
+                  </td>
+                  <td style="padding-left: 12px; text-align: left;">
+                    <span style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; display: block; line-height: 1;">{app_name}</span>
+                    <span style="font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 0.5px; display: block; margin-top: 4px;">SHARE ONCE &bull; KEEP IT TEMPORARY</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- MAIN CONTENT BODY -->
+          <tr>
+            <td style="padding: 0 36px 24px 36px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color: #0f172a; text-align: center;">
+                Your Secure File is Ready 📦
+              </h2>
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569; text-align: center;">
+                You have received a secure, temporary file transfer. Use the one-time PIN code below to unlock and download your file.
+              </p>
+
+              <!-- CODE BOX -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%); border: 2px dashed #93c5fd; border-radius: 16px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 24px; text-align: center;">
+                    <span style="display: inline-block; background-color: #dbeafe; color: #1e40af; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">
+                      🔑 ONE-TIME PIN CODE
+                    </span>
+                    <div style="font-family: 'SF Mono', 'Roboto Mono', Menlo, Consolas, Monaco, monospace; font-size: 36px; font-weight: 900; letter-spacing: 6px; color: #0f172a; line-height: 1.2; margin: 6px 0 12px 0;">
+                      {code}
+                    </div>
+                    <p style="margin: 0; font-size: 12px; color: #64748b; font-weight: 500;">
+                      Enter this code on the download page to unlock your file.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA BUTTON -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="{retrieve_url}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 14px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); text-align: center;">
+                      Unlock &amp; Download File &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- SPAM FOLDER ALERT BOX -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 14px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px; text-align: left;">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td width="28" valign="top" style="font-size: 18px; line-height: 1;">📥</td>
+                        <td style="font-size: 13px; line-height: 1.5; color: #78350f; font-weight: 600;">
+                          <strong style="color: #92400e;">Did not receive the mail in your inbox?</strong> Please check your <span style="text-decoration: underline;">Spam or Junk folder</span> for the code.
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- SECURITY & EXPIRATION BADGES -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 12px; padding: 14px; margin-bottom: 8px;">
+                <tr>
+                  <td style="font-size: 12px; color: #64748b; line-height: 1.6; text-align: center;">
+                    ⏱️ <strong style="color: #334155;">Expires in {expiration_hours} hours</strong> &nbsp;&bull;&nbsp; 
+                    🔥 <strong style="color: #334155;">Single-Use Only</strong> &nbsp;&bull;&nbsp; 
+                    🛡️ <strong style="color: #334155;">Encrypted</strong>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER SECTION -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 24px 36px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; font-weight: 500;">
+                {app_name} &bull; Secure Temporary File Sharing Service
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                This email was sent because a file share was created for your address. If you did not request this, you can safely ignore it.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>"""
 

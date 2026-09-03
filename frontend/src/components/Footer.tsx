@@ -1,40 +1,158 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { config } from '@/lib/config';
 
-const socialLinks = [
-  { key: 'instagram', url: config.instagramUrl, label: 'Instagram', icon: InstagramIcon },
-  { key: 'x', url: config.xUrl, label: 'X', icon: XIcon },
-  { key: 'linkedin', url: config.linkedinUrl, label: 'LinkedIn', icon: LinkedInIcon },
-  { key: 'github', url: config.githubUrl, label: 'GitHub', icon: GitHubIcon },
-  { key: 'email', url: config.contactEmail ? `mailto:${config.contactEmail}` : '', label: 'Email', icon: MailIcon },
+interface SocialLink {
+  key: string;
+  url: string;
+  label: string;
+  username?: string;
+  icon: (props: { className?: string }) => JSX.Element;
+  brandStyles: string;
+}
+
+const socialLinks: SocialLink[] = [
+  {
+    key: 'instagram',
+    url: config.instagramUrl,
+    label: 'Instagram',
+    username: '@ravixpanchal',
+    icon: InstagramIcon,
+    brandStyles:
+      'border-slate-200/90 bg-white text-slate-700 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-rose-500 hover:to-purple-600 hover:text-white hover:shadow-lg hover:shadow-rose-500/20 hover:border-transparent',
+  },
+  {
+    key: 'x',
+    url: config.xUrl,
+    label: 'X (Twitter)',
+    username: '@ravixpanchal',
+    icon: XIcon,
+    brandStyles:
+      'border-slate-200/90 bg-white text-slate-700 hover:bg-slate-950 hover:text-white hover:shadow-lg hover:shadow-slate-950/20 hover:border-transparent',
+  },
+  {
+    key: 'linkedin',
+    url: config.linkedinUrl,
+    label: 'LinkedIn',
+    username: 'Ravi Panchal',
+    icon: LinkedInIcon,
+    brandStyles:
+      'border-slate-200/90 bg-white text-slate-700 hover:bg-[#0A66C2] hover:text-white hover:shadow-lg hover:shadow-blue-600/20 hover:border-transparent',
+  },
+  {
+    key: 'github',
+    url: config.githubUrl,
+    label: 'GitHub',
+    username: 'ravixpanchal',
+    icon: GitHubIcon,
+    brandStyles:
+      'border-slate-200/90 bg-white text-slate-700 hover:bg-slate-900 hover:text-white hover:shadow-lg hover:shadow-slate-900/20 hover:border-transparent',
+  },
+  {
+    key: 'email',
+    url: config.contactEmail ? `mailto:${config.contactEmail}` : '',
+    label: 'Email',
+    username: 'Contact',
+    icon: MailIcon,
+    brandStyles:
+      'border-slate-200/90 bg-white text-slate-700 hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 hover:text-white hover:shadow-lg hover:shadow-blue-600/20 hover:border-transparent',
+  },
 ];
 
 export function Footer() {
+  const pathname = usePathname();
   const visibleLinks = socialLinks.filter((l) => l.url);
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (pathname === '/') {
+      e.preventDefault();
+      window.location.href = '/';
+    }
+  };
+
   return (
-    <footer className="border-t border-slate-200 bg-white mt-auto">
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 sm:px-6">
+    <footer className="relative border-t border-slate-200/80 bg-gradient-to-b from-white via-slate-50/70 to-slate-100/80 mt-auto pt-6 xs:pt-8 pb-5 xs:pb-6 overflow-hidden">
+      {/* Decorative ambient background glow */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
+      <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-24 w-96 rounded-full bg-blue-400/10 blur-2xl" />
+
+      <div className="relative mx-auto max-w-4xl px-3.5 xs:px-4 sm:px-6">
+        {/* Social Links Highlight Section */}
         {visibleLinks.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            {visibleLinks.map(({ key, url, label, icon: Icon }) => (
-              <a
-                key={key}
-                href={url}
-                target={key === 'email' ? undefined : '_blank'}
-                rel={key === 'email' ? undefined : 'noopener noreferrer'}
-                aria-label={label}
-                className="rounded-lg p-2.5 sm:p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 active:bg-slate-200"
-              >
-                <Icon className="h-5 w-5" />
-              </a>
-            ))}
+          <div className="mb-6 xs:mb-8 text-center">
+            <div className="inline-flex items-center gap-1.5 xs:gap-2 rounded-full border border-blue-200/60 bg-blue-50/80 px-2.5 xs:px-3 py-0.5 xs:py-1 text-[11px] xs:text-xs font-semibold text-blue-700 shadow-xs mb-3 xs:mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+              </span>
+              Connect & Follow
+            </div>
+
+            <h3 className="text-xs xs:text-sm font-semibold tracking-wide text-slate-800 uppercase mb-3 xs:mb-4">
+              Let's Stay Connected
+            </h3>
+
+            {/* Highlighted Social Cards Grid */}
+            <div className="grid grid-cols-2 xs:flex xs:flex-wrap items-center justify-center gap-2 xs:gap-2.5 sm:gap-3.5">
+              {visibleLinks.map(({ key, url, label, icon: Icon, brandStyles }) => (
+                <a
+                  key={key}
+                  href={url}
+                  target={key === 'email' ? undefined : '_blank'}
+                  rel={key === 'email' ? undefined : 'noopener noreferrer'}
+                  aria-label={label}
+                  className={`group flex items-center justify-center xs:justify-start gap-2 xs:gap-2.5 rounded-xl border px-3 py-2.5 xs:px-3.5 xs:py-2.5 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 min-h-[42px] ${brandStyles}`}
+                >
+                  <Icon className="h-4 w-4 xs:h-5 xs:w-5 shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                  <span className="truncate">{label}</span>
+                  <svg
+                    className="h-3 w-3 xs:h-3.5 xs:w-3.5 opacity-60 transition-transform duration-300 group-hover:translate-x-1 group-hover:opacity-100 hidden xs:inline-block shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
+              ))}
+            </div>
           </div>
         )}
-        <p className="text-center text-xs sm:text-sm text-slate-500">
-          Made with ❤️ by Ravi Panchal. All Rights Reserved ©2026.
-        </p>
+
+        {/* Feature Badges & Status */}
+        <div className="my-5 sm:my-6 flex flex-wrap items-center justify-center gap-1.5 xs:gap-2.5 border-y border-slate-200/60 py-3.5 xs:py-4 text-[10px] xs:text-xs text-slate-500">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-200/60 px-2 xs:px-2.5 py-1 font-medium text-slate-700">
+            🔒 100% Encrypted & Temporary
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-200/60 px-2 xs:px-2.5 py-1 font-medium text-slate-700">
+            ⚡ Up to 1 GB Files
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-200/60 px-2 xs:px-2.5 py-1 font-medium text-slate-700">
+            ✨ No Account Needed
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-100/80 border border-emerald-300/60 px-2 xs:px-2.5 py-1 font-medium text-emerald-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Systems Operational
+          </span>
+        </div>
+
+        {/* Copyright & Author */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-center text-xs text-slate-500">
+          <p className="flex items-center gap-1">
+            Made with <span className="text-red-500 animate-pulse">❤️</span> by{' '}
+            <span className="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+              Ravi Panchal
+            </span>
+          </p>
+          <p className="text-slate-400">
+            <Link href="/" onClick={handleLogoClick} title="Return to Homepage" className="font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer">
+              {config.appName}
+            </Link>{' '}
+            © {new Date().getFullYear()}. All Rights Reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );

@@ -2,26 +2,30 @@
 
 **Share once. Keep it temporary.**
 
-BurnDrop is an open-source, passwordless, one-time temporary file sharing platform. Upload a file up to 1 GB, receive a secure one-time code, share it anywhere — no account required.
+BurnDrop is an open-source, passwordless, one-time temporary file sharing platform. Upload single or multiple files up to 1 GB total, receive a secure one-time PIN code, share it anywhere — no account required.
 
-## Features
+---
 
-- No signup, login, or user accounts
-- Upload single or multiple files up to 1 GB total (any file type)
-- Bundle multi-file uploads into single-click .ZIP archive downloads
-- Cryptographically secure one-time codes (e.g. `K7X9-P2LM`)
-- Email delivery of sharing codes
-- Single-use or multi-file access with race-condition protection
-- Automatic expiration after 3 hours
-- Automatic file deletion via background cleanup
-- Safe inline preview for PDF, images, and plain text
-- Streaming upload and download (no full 1 GB RAM load)
-- Rate limiting for abuse protection
-- Storage abstraction (Google Drive default, extensible)
-- Modern, responsive web UI with prominent Download & Receive File CTA buttons
-- Docker Compose for local development
+## ✨ Features
 
-## Architecture
+- **No Signup or User Accounts**: Start uploading immediately without logging in.
+- **Single & Multi-File Support**: Upload multiple files up to 1 GB total in a single batch.
+- **Automatic ZIP Bundling**: Multi-file shares are automatically bundled into single-click `.ZIP` archive downloads.
+- **100% Responsive Design**: Optimized for mobile phones (320px+), tablets, laptops, and 4K displays with touch-friendly controls.
+- **Cryptographically Secure PIN Codes**: High-entropy 8-character one-time codes (e.g. `K7X9-P2LM`).
+- **Instant Email Delivery**: Sends PIN codes directly to recipients with Gmail, SMTP, Resend, SendGrid, or Brevo API drivers.
+- **Spam Alert Notices**: Built-in visual reminders for users to check spam/junk folders.
+- **Single-Use Access & Expiration**: Codes expire automatically after 3 hours and feature atomic race-condition protection.
+- **Automatic File Deletion**: Background cleanup automatically removes expired files from storage.
+- **Safe Inline Preview**: View PDFs, images, and plain text securely in the browser without downloading.
+- **Streaming Uploads & Downloads**: Efficient chunked streaming ensures low RAM footprint even for 1 GB files.
+- **Rate Limiting**: Built-in Redis protection against abuse and brute-force attempts.
+- **Storage Abstraction**: Extensible storage driver layer (Google Drive default, local storage option).
+- **Docker Compose Setup**: Quick one-command setup for development and production.
+
+---
+
+## 🏗️ Architecture
 
 ```
                          USER
@@ -41,7 +45,7 @@ BurnDrop is an open-source, passwordless, one-time temporary file sharing platfo
            ┌─────────────┼──────────────┐
            │             │              │
            ▼             ▼              ▼
-     PostgreSQL        Redis       Email (SMTP)
+     PostgreSQL        Redis       Email (SMTP/API)
            │             │              │
            └─────────────┼──────────────┘
                          │
@@ -49,58 +53,60 @@ BurnDrop is an open-source, passwordless, one-time temporary file sharing platfo
                  StorageService
                          │
                          ▼
-                  Google Drive
+                  Google Drive / Local
 ```
 
-See [docs/architecture.md](docs/architecture.md) for details.
+For detailed architectural diagrams and data flows, see [docs/architecture.md](docs/architecture.md).
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 14, React, TypeScript, Tailwind CSS |
-| Backend | Python 3.12+, FastAPI, Pydantic |
-| Database | PostgreSQL 16, SQLAlchemy, Alembic |
-| Cache | Redis 7 |
-| Storage | Google Drive (via abstraction layer) |
-| Email | Gmail SMTP (aiosmtplib) |
+## 🛠️ Tech Stack
+
+| Layer | Technology | Description |
+|-------|------------|-------------|
+| **Frontend** | Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS | Responsive UI & client-side stream handling |
+| **Backend** | Python 3.12+, FastAPI, Pydantic v2 | High-performance async REST API |
+| **Database** | PostgreSQL 16, SQLAlchemy 2.0, Alembic | Metadata storage & transaction locks |
+| **Cache & Rate Limiting** | Redis 7 | Distributed rate limiting & session state |
+| **Storage Engine** | Google Drive API (or Local Storage) | Encrypted backend storage provider |
+| **Email Delivery** | Gmail API, SMTP, Resend, SendGrid, Brevo | Multi-driver email notification system |
 
 ---
 
 ## 🚀 Quick Start: How to Run the Website
 
-You can run the website either using **Docker Compose** (recommended — starts all services with one command) or **Manually** (running backend and frontend separately).
+You can start BurnDrop using either **Docker Compose** (recommended for full stack setup) or **Manually** (for local frontend/backend development).
 
 ---
 
 ### Option 1 — Run with Docker Compose (Recommended)
 
-This is the fastest way to start the website including PostgreSQL, Redis, Backend API, and Frontend UI.
+Starts PostgreSQL, Redis, Backend FastAPI service, and Frontend Next.js app in unified containers.
 
-#### 1. Clone & Configure
+#### 1. Clone & Configure Environment
 ```bash
 cp .env.example .env
 ```
-*(Optionally edit `.env` to configure social media links, email, or Google Drive).*
+*(Optionally edit `.env` to configure email or Google Drive credentials).*
 
-#### 2. Start Services
+#### 2. Build & Launch Containers
 ```bash
 docker-compose up --build
 ```
-*(Or `docker compose up --build` if using Docker Compose v2 plugin)*
+*(Or `docker compose up --build` for Docker Compose v2)*
 
-To run in the background (detached mode):
+To run in detached (background) mode:
 ```bash
 docker-compose up --build -d
 ```
 
-#### 3. Open the Website
+#### 3. Access the Application
 - 🌐 **Website Frontend**: [http://localhost:3000](http://localhost:3000)
+- 🔑 **Receive File Page**: [http://localhost:3000/retrieve](http://localhost:3000/retrieve)
 - ⚡ **Backend API**: [http://localhost:8000](http://localhost:8000)
-- 📄 **Swagger API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- 🔑 **Retrieve File Page**: [http://localhost:3000/retrieve](http://localhost:3000/retrieve)
+- 📄 **Interactive Swagger API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-To stop all services:
+To stop all services cleanly:
 ```bash
 docker-compose down
 ```
@@ -113,10 +119,9 @@ docker-compose down
 ```bash
 docker-compose up postgres redis -d
 ```
-*(Alternatively, use local PostgreSQL & Redis services if installed).*
 
 #### Step 2 — Start Backend API
-Open terminal 1:
+Open **Terminal 1**:
 ```bash
 cd backend
 python3 -m venv venv
@@ -127,7 +132,7 @@ uvicorn app.main:app --reload --port 8000
 Backend runs at **http://localhost:8000**.
 
 #### Step 3 — Start Frontend Website
-Open terminal 2:
+Open **Terminal 2**:
 ```bash
 cd frontend
 npm install
@@ -137,153 +142,49 @@ Website runs at **http://localhost:3000**.
 
 ---
 
-### Prerequisites
+## 📱 Mobile Responsiveness & UI Sizing
 
-| Requirement | Recommended Version | Notes |
-|-------------|---------------------|-------|
-| Docker | 20+ | Recommended for full stack setup |
-| Docker Compose | v1 or v2 | See Docker notes below |
-| Node.js | 20+ | Required for manual frontend setup |
-| Python | 3.12+ | Required for manual backend setup |
+BurnDrop features a fluid, mobile-first design with target breakpoints:
+- **Mobile Phones (320px – 480px)**: Minimum 44px touch targets, responsive font scaling for PIN codes, and adaptive flex layouts.
+- **Tablets (640px – 1024px)**: Dual-column action layouts and optimized file preview lists.
+- **Desktops (1024px+)**: Centered card glassmorphism with subtle ambient glow effects.
 
 ---
 
-### Step 4 — Test the application
+## ✉️ Email Driver Configuration
 
-1. Open http://localhost:3000
-2. Click **Choose Files** to select one or multiple test files
-3. Enter your recipient email address
-4. Click **Generate One-Time Code**
-5. Copy the one-time code shown on screen (e.g. `K7X9-P2LM`)
-6. Click the prominent **Download / Receive File** header button or **Download Files Here →** homepage CTA
-7. Enter your code and click **Unlock & Download Files**
-8. View or download individual files, or click **Download All Files (.zip)** to save a bundled archive
+Configure `EMAIL_SERVICE` in your `.env` file depending on your preferred email provider:
 
----
-
-## Docker Notes
-
-| Issue | Solution |
-|-------|----------|
-| `unknown flag: --build` or `unknown shorthand flag: 'd'` | Use `docker-compose` (with hyphen) instead of `docker compose` |
-| `permission denied` on docker.sock | Run `sudo usermod -aG docker $USER` then log out/in |
-| Port 5432 already in use | Run `sudo systemctl stop postgresql` before starting Docker |
-| Backend can't connect to database | Run `docker-compose down && docker-compose up -d` to recreate the network |
-| Backend crashed on first start | Run `docker-compose restart backend` — startup retries are built in |
-| Website loads but upload fails | Backend may be down — check `docker-compose logs backend` |
-
-### Services started by Docker Compose
-
-| Container | Port | Purpose |
-|-----------|------|---------|
-| `postgres` | 5432 | Share metadata database |
-| `redis` | 6379 | Rate limiting |
-| `backend` | 8000 | FastAPI REST API |
-| `frontend` | 3000 | Next.js website |
-
----
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
-| Variable | Description |
-|----------|-------------|
-| `APP_NAME` | Application name (default: BurnDrop) |
-| `APP_BASE_URL` | Frontend URL for email links |
-| `APP_SECRET` | Secret for code hashing and JWT signing |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
-| `MAX_FILE_SIZE_MB` | Max upload size (default: 1024) |
-| `FILE_EXPIRATION_HOURS` | Share lifetime (default: 3) |
-| `STORAGE_BACKEND` | `google_drive` or `local` |
-| `GOOGLE_DRIVE_FOLDER_ID` | Target Google Drive folder |
-| `GOOGLE_CLIENT_ID` | OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | OAuth client secret |
-| `GOOGLE_REFRESH_TOKEN` | OAuth refresh token |
-| `EMAIL_SERVICE` | Email driver (`smtp`, `gmail`, `resend`, `sendgrid`, `brevo`) |
-| `EMAIL_FROM` | Sender email address |
-| `EMAIL_USERNAME` | SMTP username (used for `smtp` service) |
-| `EMAIL_PASSWORD` | SMTP password (used for `smtp` service) |
-| `RESEND_API_KEY` | Resend API key (used for `resend` service) |
-| `SENDGRID_API_KEY` | SendGrid API key (used for `sendgrid` service) |
-| `BREVO_API_KEY` | Brevo API key (used for `brevo` service) |
-
-> When using Docker, `DATABASE_URL` and `REDIS_URL` in `docker-compose.yml` override `.env` automatically — you do not need to change them.
-
----
-
-## Google Drive & Gmail API Setup
-
-1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable both the **Google Drive API** and the **Gmail API**
-3. Create **OAuth 2.0 credentials** (Web application)
-4. Add this **Authorized redirect URI**:
-
-   ```
-   https://developers.google.com/oauthplayground
-   ```
-
-5. Open [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground)
-6. Click the gear icon → enable **Use your own OAuth credentials**
-7. Enter your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-8. Select or enter scopes:
-   - For Drive storage: `https://www.googleapis.com/auth/drive.file`
-   - For Gmail sending (HTTP): `https://www.googleapis.com/auth/gmail.send`
-9. Click **Authorize APIs** → **Exchange authorization code for tokens**
-10. Copy the **Refresh token** into `.env` as `GOOGLE_REFRESH_TOKEN`
-11. Share the target folder (`1Q-g7HQtJRIiyoUAiiRRcZxPLy9ZtijP8`) with your Google account — keep it **private**
-
-```env
-GOOGLE_CLIENT_ID=your-client-id
-GOOGLE_CLIENT_SECRET=your-client-secret
-GOOGLE_REFRESH_TOKEN=your-refresh-token
-GOOGLE_DRIVE_FOLDER_ID=1Q-g7HQtJRIiyoUAiiRRcZxPLy9ZtijP8
-STORAGE_BACKEND=google_drive
-```
-
-> The frontend never exposes Google Drive URLs, file IDs, or credentials.
-
----
-
-## Email Setup Options
-
-You can send emails using direct SMTP, Google Gmail API, or HTTP-based delivery APIs (Resend, SendGrid, Brevo). Configure `.env` depending on your selected driver:
-
-### 1. Gmail API (Recommended for Free Tier Deployments)
-Bypasses outbound SMTP port blocks on hosting providers (like Render Free tier). Requires client credentials configured in the Google API Setup step above:
-
+### 1. Gmail API (`EMAIL_SERVICE=gmail`)
+Recommended for deployments on cloud providers (such as Render) that block outbound SMTP ports 587/465.
 ```env
 EMAIL_SERVICE=gmail
 EMAIL_FROM=your-gmail-address@gmail.com
 ```
 
-### 2. Resend (HTTP API)
-Great for custom domain name delivery over HTTP:
-
+### 2. Resend (`EMAIL_SERVICE=resend`)
+HTTP API delivery for custom domain names.
 ```env
 EMAIL_SERVICE=resend
 EMAIL_FROM=noreply@yourdomain.com
 RESEND_API_KEY=re_your_api_key
 ```
 
-### 3. SendGrid (HTTP API)
+### 3. SendGrid (`EMAIL_SERVICE=sendgrid`)
 ```env
 EMAIL_SERVICE=sendgrid
 EMAIL_FROM=noreply@yourdomain.com
 SENDGRID_API_KEY=your_sendgrid_api_key
 ```
 
-### 4. Brevo (HTTP API)
+### 4. Brevo (`EMAIL_SERVICE=brevo`)
 ```env
 EMAIL_SERVICE=brevo
 EMAIL_FROM=noreply@yourdomain.com
 BREVO_API_KEY=your_brevo_api_key
 ```
 
-### 5. SMTP (Gmail/Custom SMTP)
-Standard SMTP delivery (Note: Port 587 and 465 are blocked on Render Free tier):
-
+### 5. Standard SMTP (`EMAIL_SERVICE=smtp`)
 ```env
 EMAIL_SERVICE=smtp
 EMAIL_FROM=your-email@gmail.com
@@ -293,99 +194,39 @@ EMAIL_SMTP_HOST=smtp.gmail.com
 EMAIL_SMTP_PORT=587
 ```
 
-> Never commit `.env` or place passwords/API keys in source code. Uploads work even if email delivery fails — the code is always shown on screen.
+---
+
+## 🔑 Security Model
+
+- **HMAC-SHA256 Code Hashing**: Plaintext PIN codes are never stored in the database.
+- **Atomic Single-Use Locking**: Prevents concurrent race conditions via PostgreSQL `SELECT ... FOR UPDATE`.
+- **Redis Rate Limiting**: Enforces request caps on upload, PIN verification, and invalid code attempts.
+- **Safe Previews Only**: Strictly restricts inline viewing to safe MIME types (images, PDF, plain text).
 
 ---
 
-## API Endpoints
+## 🧪 Running Tests
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/config` | Public app configuration |
-| POST | `/api/shares` | Upload file + create share |
-| POST | `/api/shares/verify` | Verify one-time code |
-| GET | `/api/shares/access/download` | Download file (consumes code) |
-| GET | `/api/shares/access/view` | Preview file (consumes code) |
-
----
-
-## Security Model
-
-- **One-time codes** are generated with `secrets` module (~40 bits entropy)
-- **Codes are hashed** (HMAC-SHA256) before database storage — plaintext never stored
-- **Atomic consumption** via PostgreSQL `SELECT ... FOR UPDATE`
-- **Rate limiting** via Redis (uploads, verification, invalid attempts)
-- **No storage provider leakage** — all file access proxied through backend
-- **Security headers** on all responses (CSP, X-Frame-Options, etc.)
-- **Untrusted file handling** — no execution, safe preview whitelist only
-
-Access to a shared file requires possession of its valid one-time code. The code is a bearer credential — if you share it with someone else, they may access your file.
-
----
-
-## Testing
-
+Run backend tests using Pytest:
 ```bash
 cd backend
 source venv/bin/activate
-pip install -r requirements.txt
 PYTHONPATH=. pytest -v
 ```
 
-Tests cover:
-- Code generation entropy and format
-- Expiration enforcement
-- One-time use and race conditions
-- File size limits
-- Storage upload/download/delete
-- Email content (no real SMTP in tests)
-- User data isolation
+---
+
+## 👨‍💻 Connect with the Author
+
+Created with ❤️ by **Ravi Panchal**
+
+- **GitHub**: [@ravixpanchal](https://github.com/ravixpanchal)
+- **LinkedIn**: [Ravi Panchal](https://linkedin.com/in/ravixpanchal)
+- **Instagram**: [@ravixpanchal](https://instagram.com/ravixpanchal)
+- **X (Twitter)**: [@ravixpanchal](https://x.com/ravixpanchal)
 
 ---
 
-## Adding a Storage Provider
+## 📜 License
 
-Implement the `StorageService` abstract class in `backend/app/storage/`:
-
-```python
-class StorageService(ABC):
-    async def upload(self, key, stream, size, mime_type) -> str: ...
-    async def download(self, key) -> AsyncIterator[bytes]: ...
-    async def delete(self, key) -> bool: ...
-    async def exists(self, key) -> bool: ...
-    async def get_metadata(self, key) -> StorageMetadata | None: ...
-```
-
-Register your implementation in `get_storage_service()` and set `STORAGE_BACKEND` in `.env`.
-
----
-
-## Troubleshooting
-
-| Symptom | Likely cause | Fix |
-|---------|-------------|-----|
-| `Connection refused` on backend startup | PostgreSQL/Redis not running | Start with Docker or install locally |
-| `pip install` fails on Python 3.14 | Old pinned pydantic has no wheel | Use updated `requirements.txt` (pydantic >= 2.11) |
-| Frontend loads, upload fails | Backend container down | `docker-compose restart backend` |
-| Email not received | Gmail App Password not set | Set `EMAIL_PASSWORD` in `.env` — code still shown on screen |
-| Google Drive upload fails | Invalid refresh token or folder not shared | Re-generate token via OAuth Playground |
-| `docker compose` commands fail | Compose plugin not installed | Use `docker-compose` (with hyphen) |
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for responsible disclosure.
-
-## License
-
-MIT License — see [LICENSE](LICENSE).
-
----
-
-Made with ♥ by Ravi Panchal. All Rights Reserved @2026.
+This project is licensed under the [MIT License](LICENSE).

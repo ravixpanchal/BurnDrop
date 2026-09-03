@@ -255,7 +255,9 @@ class ShareService:
                 break
 
         if target_file is None:
-            if not share.files and (share.original_filename.endswith(".zip") or (share.mime_type and "zip" in share.mime_type)):
+            if share.files and (file_id in ("main", "default", "none", "") or str(share.share_id) == file_id):
+                target_file = share.files[0]
+            elif not share.files and (share.original_filename.endswith(".zip") or (share.mime_type and "zip" in share.mime_type)):
                 try:
                     chunks = []
                     async for chunk in self.storage.download(share.storage_key):
@@ -277,9 +279,10 @@ class ShareService:
                 except Exception:
                     logger.exception("Failed to extract item %s from zip for share %s", file_id, share.share_id)
 
-            if str(share.share_id) == file_id or not share.files:
-                return self.stream_file(share), os.path.basename(share.original_filename), share.mime_type, share.file_size
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in this share.")
+            if target_file is None:
+                if str(share.share_id) == file_id or file_id in ("main", "default", "none", "") or not share.files:
+                    return self.stream_file(share), os.path.basename(share.original_filename), share.mime_type, share.file_size
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in this share.")
 
         filename = os.path.basename(target_file.original_filename)
         mime_type = target_file.mime_type

@@ -19,7 +19,10 @@ def generate_share_code() -> str:
 
 
 def normalize_code(code: str) -> str:
-    """Normalize user input: uppercase, strip whitespace."""
+    """Normalize user input: uppercase, strip whitespace, auto-format 8-char codes with hyphen."""
+    clean = code.strip().upper().replace(" ", "").replace("-", "")
+    if len(clean) == 8:
+        return f"{clean[:4]}-{clean[4:]}"
     return code.strip().upper().replace(" ", "")
 
 

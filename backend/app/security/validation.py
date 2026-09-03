@@ -25,9 +25,9 @@ def sanitize_filename(filename: str) -> str:
 PREVIEWABLE_EXTENSIONS = frozenset(
     {
         "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico",
-        "pdf", "txt", "json", "csv", "md", "py", "js", "ts", "jsx", "tsx",
+        "pdf", "txt", "tex", "latex", "json", "csv", "md", "py", "js", "ts", "jsx", "tsx",
         "html", "css", "xml", "log", "yaml", "yml", "sh", "c", "cpp", "h",
-        "java", "rs", "go", "sql",
+        "java", "rs", "go", "sql", "rtf", "doc", "docx", "ppt", "pptx", "xls", "xlsx",
     }
 )
 
