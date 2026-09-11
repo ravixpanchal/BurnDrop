@@ -36,24 +36,74 @@ Powered by {app_name} - Share once • Keep it temporary.
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your {app_name} Access Code</title>
+  <style>
+    /* ── Reset ── */
+    body, table, td, a {{ -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }}
+    table, td {{ mso-table-lspace: 0pt; mso-table-rspace: 0pt; }}
+    img {{ -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }}
+
+    /* ── Responsive overrides (≤ 600px) ── */
+    @media only screen and (max-width: 600px) {{
+      .email-wrapper {{ padding: 16px 8px !important; }}
+      .email-card   {{ border-radius: 16px !important; }}
+
+      /* Header & body padding */
+      .header-td  {{ padding: 24px 20px 16px 20px !important; }}
+      .body-td    {{ padding: 0 20px 20px 20px !important; }}
+      .footer-td  {{ padding: 20px !important; }}
+
+      /* Headings */
+      .h2         {{ font-size: 17px !important; }}
+
+      /* PIN code */
+      .pin-code   {{ font-size: 28px !important; letter-spacing: 4px !important; }}
+
+      /* CTA button — full width on mobile */
+      .cta-td     {{ padding: 0 !important; }}
+      .cta-btn    {{
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 15px 20px !important;
+        text-align: center !important;
+        border-radius: 12px !important;
+      }}
+
+      /* Badges — stack vertically */
+      .badges-td  {{ font-size: 12px !important; }}
+      .badge-sep  {{ display: none !important; }}
+      .badge-item {{ display: block !important; margin-bottom: 4px !important; }}
+    }}
+  </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 30px 15px;">
+
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+         class="email-wrapper" style="background-color: #f1f5f9; padding: 30px 15px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04); border: 1px solid #e2e8f0;">
-          
-          <!-- BRAND TOP ACCENT BAR -->
+
+        <!-- ░░ CARD ░░ -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+               class="email-card"
+               style="max-width: 560px; background-color: #ffffff; border-radius: 20px; overflow: hidden;
+                      box-shadow: 0 10px 25px -5px rgba(15,23,42,.08), 0 8px 10px -6px rgba(15,23,42,.04);
+                      border: 1px solid #e2e8f0;">
+
+          <!-- ACCENT BAR -->
           <tr>
-            <td style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%); height: 8px; font-size: 0; line-height: 0;">&nbsp;</td>
+            <td style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%);
+                       height: 8px; font-size: 0; line-height: 0;">&nbsp;</td>
           </tr>
 
-          <!-- HEADER SECTION -->
+          <!-- HEADER -->
           <tr>
-            <td style="padding: 36px 36px 24px 36px; text-align: center;">
+            <td class="header-td" style="padding: 36px 36px 24px 36px; text-align: center;">
               <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 14px; width: 44px; height: 44px; text-align: center; vertical-align: middle; color: #ffffff; font-size: 22px; line-height: 44px; font-weight: bold;">
+                  <td style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 14px;
+                             width: 44px; height: 44px; text-align: center; vertical-align: middle;
+                             color: #ffffff; font-size: 22px; line-height: 44px; font-weight: bold;">
                     🔥
                   </td>
                   <td style="padding-left: 12px; text-align: left;">
@@ -65,24 +115,32 @@ Powered by {app_name} - Share once • Keep it temporary.
             </td>
           </tr>
 
-          <!-- MAIN CONTENT BODY -->
+          <!-- BODY -->
           <tr>
-            <td style="padding: 0 36px 24px 36px;">
-              <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color: #0f172a; text-align: center;">
+            <td class="body-td" style="padding: 0 36px 24px 36px;">
+
+              <h2 class="h2" style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color: #0f172a; text-align: center;">
                 Your Secure File is Ready 📦
               </h2>
               <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569; text-align: center;">
                 You have received a secure, temporary file transfer. Use the one-time PIN code below to unlock and download your file.
               </p>
 
-              <!-- CODE BOX -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%); border: 2px dashed #93c5fd; border-radius: 16px; margin-bottom: 24px;">
+              <!-- PIN CODE BOX -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                     style="background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+                            border: 2px dashed #93c5fd; border-radius: 16px; margin-bottom: 24px;">
                 <tr>
                   <td style="padding: 24px; text-align: center;">
-                    <span style="display: inline-block; background-color: #dbeafe; color: #1e40af; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">
+                    <span style="display: inline-block; background-color: #dbeafe; color: #1e40af;
+                                 font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+                                 text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">
                       🔑 ONE-TIME PIN CODE
                     </span>
-                    <div style="font-family: 'SF Mono', 'Roboto Mono', Menlo, Consolas, Monaco, monospace; font-size: 36px; font-weight: 900; letter-spacing: 6px; color: #0f172a; line-height: 1.2; margin: 6px 0 12px 0;">
+                    <div class="pin-code"
+                         style="font-family: 'SF Mono', 'Roboto Mono', Menlo, Consolas, Monaco, monospace;
+                                font-size: 36px; font-weight: 900; letter-spacing: 6px; color: #0f172a;
+                                line-height: 1.2; margin: 6px 0 12px 0; word-break: break-all;">
                       {code}
                     </div>
                     <p style="margin: 0; font-size: 12px; color: #64748b; font-weight: 500;">
@@ -93,25 +151,32 @@ Powered by {app_name} - Share once • Keep it temporary.
               </table>
 
               <!-- CTA BUTTON -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                     style="margin-bottom: 24px;">
                 <tr>
-                  <td align="center">
-                    <a href="{retrieve_url}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 14px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); text-align: center;">
+                  <td class="cta-td" align="center">
+                    <a href="{retrieve_url}" target="_blank" class="cta-btn"
+                       style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+                              color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none;
+                              padding: 14px 36px; border-radius: 14px;
+                              box-shadow: 0 4px 14px rgba(37,99,235,.35); text-align: center;">
                       Unlock &amp; Download File &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- SPAM FOLDER ALERT BOX -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 14px; margin-bottom: 24px;">
+              <!-- SPAM ALERT -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                     style="background-color: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 14px; margin-bottom: 24px;">
                 <tr>
-                  <td style="padding: 16px; text-align: left;">
+                  <td style="padding: 16px;">
                     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td width="28" valign="top" style="font-size: 18px; line-height: 1;">📥</td>
+                        <td width="28" valign="top" style="font-size: 18px; line-height: 1.4;">📥</td>
                         <td style="font-size: 13px; line-height: 1.5; color: #78350f; font-weight: 600;">
-                          <strong style="color: #92400e;">Did not receive the mail in your inbox?</strong> Please check your <span style="text-decoration: underline;">Spam or Junk folder</span> for the code.
+                          <strong style="color: #92400e;">Did not receive the mail in your inbox?</strong>
+                          Please check your <span style="text-decoration: underline;">Spam or Junk folder</span> for the code.
                         </td>
                       </tr>
                     </table>
@@ -119,13 +184,16 @@ Powered by {app_name} - Share once • Keep it temporary.
                 </tr>
               </table>
 
-              <!-- SECURITY & EXPIRATION BADGES -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 12px; padding: 14px; margin-bottom: 8px;">
+              <!-- BADGES ROW -->
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+                     style="background-color: #f8fafc; border-radius: 12px; margin-bottom: 8px;">
                 <tr>
-                  <td style="font-size: 12px; color: #64748b; line-height: 1.6; text-align: center;">
-                    ⏱️ <strong style="color: #334155;">Expires in {expiration_hours} hours</strong> &nbsp;&bull;&nbsp; 
-                    🔥 <strong style="color: #334155;">Single-Use Only</strong> &nbsp;&bull;&nbsp; 
-                    🛡️ <strong style="color: #334155;">Encrypted</strong>
+                  <td class="badges-td" style="padding: 14px; font-size: 12px; color: #64748b; line-height: 1.8; text-align: center;">
+                    <span class="badge-item">⏱️ <strong style="color: #334155;">Expires in {expiration_hours} hours</strong></span>
+                    <span class="badge-sep">&nbsp;&bull;&nbsp;</span>
+                    <span class="badge-item">🔥 <strong style="color: #334155;">Single-Use Only</strong></span>
+                    <span class="badge-sep">&nbsp;&bull;&nbsp;</span>
+                    <span class="badge-item">🛡️ <strong style="color: #334155;">Encrypted</strong></span>
                   </td>
                 </tr>
               </table>
@@ -133,9 +201,10 @@ Powered by {app_name} - Share once • Keep it temporary.
             </td>
           </tr>
 
-          <!-- FOOTER SECTION -->
+          <!-- FOOTER -->
           <tr>
-            <td style="background-color: #f8fafc; padding: 24px 36px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <td class="footer-td"
+                style="background-color: #f8fafc; padding: 24px 36px; border-top: 1px solid #e2e8f0; text-align: center;">
               <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; font-weight: 500;">
                 {app_name} &bull; Secure Temporary File Sharing Service
               </p>
@@ -146,6 +215,8 @@ Powered by {app_name} - Share once • Keep it temporary.
           </tr>
 
         </table>
+        <!-- ░░ END CARD ░░ -->
+
       </td>
     </tr>
   </table>
