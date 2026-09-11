@@ -1,3 +1,4 @@
+import asyncio
 import io
 import logging
 import mimetypes
@@ -127,7 +128,10 @@ class ShareService:
         )
         await self.repo.create(share)
 
-        email_sent = await send_share_code_email(sender_email, code)
+        # Fire the email in the background so the upload response is returned
+        # immediately — the file is already safely stored at this point.
+        asyncio.create_task(send_share_code_email(sender_email, code))
+        email_sent = True  # optimistically true; errors are logged inside the email service
 
         return share, code, email_sent  # type: ignore[return-value]
 
