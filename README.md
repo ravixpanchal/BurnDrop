@@ -4,23 +4,26 @@
 
 BurnDrop is an open-source, passwordless, one-time temporary file sharing platform. Upload single or multiple files up to 1 GB total, receive a secure one-time PIN code, share it anywhere — no account required.
 
+🌐 **Live Website**: [https://www.burn-drop.tech](https://www.burn-drop.tech)
+
 ---
 
 ## ✨ Features
 
 - **No Signup or User Accounts**: Start uploading immediately without logging in.
 - **Single & Multi-File Support**: Upload multiple files up to 1 GB total in a single batch.
+- **AWS S3 Cloud Storage Integration**: Enterprise-grade cloud storage backend using Python `boto3` with streaming chunked uploads.
 - **Automatic ZIP Bundling**: Multi-file shares are automatically bundled into single-click `.ZIP` archive downloads.
 - **100% Responsive Design**: Optimized for mobile phones (320px+), tablets, laptops, and 4K displays with touch-friendly controls.
 - **Cryptographically Secure PIN Codes**: High-entropy 8-character one-time codes (e.g. `K7X9-P2LM`).
 - **Instant Email Delivery**: Sends PIN codes directly to recipients with Gmail, SMTP, Resend, SendGrid, or Brevo API drivers.
 - **Spam Alert Notices**: Built-in visual reminders for users to check spam/junk folders.
 - **Single-Use Access & Expiration**: Codes expire automatically after 3 hours and feature atomic race-condition protection.
-- **Automatic File Deletion**: Background cleanup automatically removes expired files from storage.
+- **Automatic File Deletion**: Background worker automatically purges expired files permanently from AWS S3 or storage.
 - **Safe Inline Preview**: View PDFs, images, and plain text securely in the browser without downloading.
 - **Streaming Uploads & Downloads**: Efficient chunked streaming ensures low RAM footprint even for 1 GB files.
 - **Rate Limiting**: Built-in Redis protection against abuse and brute-force attempts.
-- **Storage Abstraction**: Extensible storage driver layer (Google Drive default, local storage option).
+- **Modular Storage Abstraction**: Extensible storage driver layer (AWS S3, Google Drive, Local Storage).
 - **Docker Compose Setup**: Quick one-command setup for development and production.
 
 ---
@@ -50,10 +53,11 @@ BurnDrop is an open-source, passwordless, one-time temporary file sharing platfo
            └─────────────┼──────────────┘
                          │
                          ▼
-                 StorageService
+                 StorageService (Strategy Pattern)
                          │
-                         ▼
-                  Google Drive / Local
+            ┌────────────┼────────────┐
+            ▼            ▼            ▼
+         AWS S3     Google Drive    Local
 ```
 
 For detailed architectural diagrams and data flows, see [docs/architecture.md](docs/architecture.md).
@@ -68,7 +72,7 @@ For detailed architectural diagrams and data flows, see [docs/architecture.md](d
 | **Backend** | Python 3.12+, FastAPI, Pydantic v2 | High-performance async REST API |
 | **Database** | PostgreSQL 16, SQLAlchemy 2.0, Alembic | Metadata storage & transaction locks |
 | **Cache & Rate Limiting** | Redis 7 | Distributed rate limiting & session state |
-| **Storage Engine** | Google Drive API (or Local Storage) | Encrypted backend storage provider |
+| **Storage Engine** | **AWS S3** / Google Drive API / Local | Swappable cloud object storage drivers (`boto3`) |
 | **Email Delivery** | Gmail API, SMTP, Resend, SendGrid, Brevo | Multi-driver email notification system |
 
 ---
@@ -87,7 +91,7 @@ Starts PostgreSQL, Redis, Backend FastAPI service, and Frontend Next.js app in u
 ```bash
 cp .env.example .env
 ```
-*(Optionally edit `.env` to configure email or Google Drive credentials).*
+*(Edit `.env` to configure your AWS S3 bucket credentials or preferred storage backend).*
 
 #### 2. Build & Launch Containers
 ```bash
@@ -142,12 +146,33 @@ Website runs at **http://localhost:3000**.
 
 ---
 
-## 📱 Mobile Responsiveness & UI Sizing
+## ☁️ Cloud Storage Driver Configuration
 
-BurnDrop features a fluid, mobile-first design with target breakpoints:
-- **Mobile Phones (320px – 480px)**: Minimum 44px touch targets, responsive font scaling for PIN codes, and adaptive flex layouts.
-- **Tablets (640px – 1024px)**: Dual-column action layouts and optimized file preview lists.
-- **Desktops (1024px+)**: Centered card glassmorphism with subtle ambient glow effects.
+BurnDrop supports three storage backends configured via `STORAGE_BACKEND` in `.env`:
+
+### 1. AWS S3 Storage (`STORAGE_BACKEND=s3`) — Recommended
+```env
+STORAGE_BACKEND=s3
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_REGION=eu-north-1
+AWS_S3_BUCKET_NAME=your-s3-bucket-name
+```
+
+### 2. Local Filesystem (`STORAGE_BACKEND=local`)
+```env
+STORAGE_BACKEND=local
+LOCAL_STORAGE_PATH=storage
+```
+
+### 3. Google Drive (`STORAGE_BACKEND=google_drive`)
+```env
+STORAGE_BACKEND=google_drive
+GOOGLE_DRIVE_FOLDER_ID=your_folder_id
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REFRESH_TOKEN=your_refresh_token
+```
 
 ---
 
@@ -202,12 +227,13 @@ EMAIL_SMTP_PORT=587
 - **Atomic Single-Use Locking**: Prevents concurrent race conditions via PostgreSQL `SELECT ... FOR UPDATE`.
 - **Redis Rate Limiting**: Enforces request caps on upload, PIN verification, and invalid code attempts.
 - **Safe Previews Only**: Strictly restricts inline viewing to safe MIME types (images, PDF, plain text).
+- **Automated S3 Purging**: Background cleanup loop automatically deletes expired payloads from AWS S3.
 
 ---
 
 ## 🧪 Running Tests
 
-Run backend tests using Pytest:
+Run backend unit and storage tests:
 ```bash
 cd backend
 source venv/bin/activate
@@ -220,10 +246,11 @@ PYTHONPATH=. pytest -v
 
 Created with ❤️ by **Ravi Panchal**
 
-- **GitHub**: [@ravixpanchal](https://github.com/ravixpanchal)
-- **LinkedIn**: [Ravi Panchal](https://linkedin.com/in/ravixpanchal)
-- **Instagram**: [@ravixpanchal](https://instagram.com/ravixpanchal)
-- **X (Twitter)**: [@ravixpanchal](https://x.com/ravixpanchal)
+- 🌐 **Live Website**: [https://www.burn-drop.tech](https://www.burn-drop.tech)
+- 🐙 **GitHub**: [@ravixpanchal](https://github.com/ravixpanchal)
+- 💼 **LinkedIn**: [Ravi Panchal](https://linkedin.com/in/ravixpanchal)
+- 📸 **Instagram**: [@ravixpanchal](https://instagram.com/ravixpanchal)
+- 🐦 **X (Twitter)**: [@ravixpanchal](https://x.com/ravixpanchal)
 
 ---
 
