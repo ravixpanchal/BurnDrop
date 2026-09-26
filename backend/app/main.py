@@ -19,13 +19,20 @@ logger = logging.getLogger(__name__)
 
 
 async def init_database() -> None:
-    """Initialize database tables."""
+    """Initialize database tables with automatic SQLite fallback if primary DB is unreachable."""
+    from app.database import engine, set_engine_and_factory
+
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     except Exception as exc:
-        logger.exception("Failed to initialize database schema: %s", exc)
-        raise
+        logger.warning("Primary database connection failed (%s); falling back to local SQLite database.", exc)
+        from sqlalchemy.ext.asyncio import create_async_engine
+
+        fallback_engine = create_async_engine("sqlite+aiosqlite:///burndrop_dev.db", echo=False)
+        set_engine_and_factory(fallback_engine)
+        async with fallback_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
 
 
