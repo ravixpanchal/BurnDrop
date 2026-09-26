@@ -9,8 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.settings import get_settings
 from app.database import get_db
 from app.schemas.share import (
+    CompleteDirectUploadRequest,
     ConfigResponse,
     HealthResponse,
+    PresignedUploadRequest,
+    PresignedUploadResponse,
     ShareCreateResponse,
     VerifyCodeRequest,
     VerifyCodeResponse,
@@ -50,6 +53,52 @@ async def config():
         linkedin_url=settings.linkedin_url,
         github_url=settings.github_url,
         contact_email=settings.contact_email,
+    )
+
+
+@router.post("/shares/presigned", response_model=PresignedUploadResponse)
+async def create_presigned_upload(
+    request: Request,
+    body: PresignedUploadRequest,
+    db: AsyncSession = Depends(get_db),
+    redis_client=Depends(get_redis),
+):
+    ip = get_client_ip(request)
+    await upload_limiter.check(redis_client, ip)
+
+    storage = get_storage_service()
+    service = ShareService(db, storage)
+    result = await service.create_presigned_uploads(
+        sender_email=body.email,
+        files_meta=[f.model_dump() for f in body.files],
+    )
+    return PresignedUploadResponse(**result)
+
+
+@router.post("/shares/complete", response_model=ShareCreateResponse, status_code=status.HTTP_201_CREATED)
+async def complete_direct_upload(
+    request: Request,
+    body: CompleteDirectUploadRequest,
+    db: AsyncSession = Depends(get_db),
+    redis_client=Depends(get_redis),
+):
+    ip = get_client_ip(request)
+    await upload_limiter.check(redis_client, ip)
+
+    storage = get_storage_service()
+    service = ShareService(db, storage)
+    share, code, email_sent = await service.complete_direct_share(
+        share_id_str=body.share_id,
+        sender_email=body.email,
+        files_info=[f.model_dump() for f in body.files],
+    )
+
+    return ShareCreateResponse(
+        code=code,
+        filename=share.original_filename,
+        size_bytes=share.file_size,
+        expires_at=share.expires_at,
+        email_sent=email_sent,
     )
 
 

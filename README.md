@@ -1,66 +1,108 @@
 # BurnDrop
 
+<div align="center">
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python)
+![Next.js](https://img.shields.io/badge/next.js-14.0-black?logo=nextdotjs)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi)
+![Docker](https://img.shields.io/badge/docker-compose-2496ED?logo=docker)
+![PostgreSQL](https://img.shields.io/badge/postgresql-16-4169E1?logo=postgresql)
+![Redis](https://img.shields.io/badge/redis-7.0-DC382D?logo=redis)
+
 **Share once. Keep it temporary.**
 
-BurnDrop is an open-source, passwordless, one-time temporary file sharing platform. Upload single or multiple files up to 1 GB total, receive a secure one-time PIN code, share it anywhere — no account required.
+*BurnDrop is an open-source, passwordless, multi-file temporary sharing platform with self-destructing PIN access, chunked streaming, and multi-driver cloud storage.*
 
-🌐 **Live Website**: [https://www.burn-drop.tech](https://www.burn-drop.tech)
+[Features](#-features) • [Directory Structure](#-directory-structure) • [Architecture](#%EF%B8%8F-architecture) • [Tech Stack](#%EF%B8%8F-tech-stack) • [Quick Start](#-quick-start-how-to-run) • [API Reference](#-api-reference) • [Environment Variables](#%EF%B8%8F-environment-variables) • [Security](#-security-model)
+
+</div>
 
 ---
 
 ## ✨ Features
 
-- **No Signup or User Accounts**: Start uploading immediately without logging in.
-- **Single & Multi-File Support**: Upload multiple files up to 1 GB total in a single batch.
-- **AWS S3 Cloud Storage Integration**: Enterprise-grade cloud storage backend using Python `boto3` with streaming chunked uploads.
-- **Automatic ZIP Bundling**: Multi-file shares are automatically bundled into single-click `.ZIP` archive downloads.
-- **100% Responsive Design**: Optimized for mobile phones (320px+), tablets, laptops, and 4K displays with touch-friendly controls.
-- **Cryptographically Secure PIN Codes**: High-entropy 8-character one-time codes (e.g. `K7X9-P2LM`).
-- **Instant Email Delivery**: Sends PIN codes directly to recipients with Gmail, SMTP, Resend, SendGrid, or Brevo API drivers.
-- **Spam Alert Notices**: Built-in visual reminders for users to check spam/junk folders.
-- **Single-Use Access & Expiration**: Codes expire automatically after 3 hours and feature atomic race-condition protection.
-- **Automatic File Deletion**: Background worker automatically purges expired files permanently from AWS S3 or storage.
-- **Safe Inline Preview**: View PDFs, images, and plain text securely in the browser without downloading.
-- **Streaming Uploads & Downloads**: Efficient chunked streaming ensures low RAM footprint even for 1 GB files.
-- **Rate Limiting**: Built-in Redis protection against abuse and brute-force attempts.
-- **Modular Storage Abstraction**: Extensible storage driver layer (AWS S3, Google Drive, Local Storage).
-- **Docker Compose Setup**: Quick one-command setup for development and production.
+- **🔒 Zero-Signup Temporary Sharing**: Start uploading instantly without user accounts or password registration.
+- **📁 Multi-File Upload & ZIP Bundling**: Upload single files or batches up to 1 GB total. Multi-file shares are automatically streamed as single-click `.ZIP` archives.
+- **🔑 Cryptographically Secure One-Time PINs**: High-entropy 8-character codes (e.g. `K7X9-P2LM`) hashed via HMAC-SHA256.
+- **📩 Multi-Driver Email Dispatch**: Deliver access codes instantly using **Gmail API**, **SMTP**, **Resend**, **SendGrid**, or **Brevo**.
+- **🔍 Safe Inline Browser Previews**: Securely inspect PDFs, images, and plain text without executing scripts or downloading files.
+- **⚡ Low-Memory Chunked Streaming**: Memory-efficient streaming pipelines for uploads and downloads handle multi-gigabyte transfers with low RAM footprint.
+- **⏱️ Automatic Expiration & Destruction**: Shares auto-expire after 3 hours (configurable). A background worker thread purges files from storage automatically.
+- **🛡️ Brute-Force & Abuse Protection**: Redis-backed sliding window rate limiters protect upload routes, verification attempts, and IP failure thresholds.
+- **☁️ Multi-Provider Storage Drivers**: Seamless abstraction supporting **Local Filesystem**, **AWS S3**, and **Google Drive API**.
+- **📱 Fluid Responsive UI**: Fully responsive UI tailored for mobile screens (320px+), tablets, laptops, and 4K displays.
+
+---
+
+## 📁 Directory Structure
+
+```gfm
+BurnDrop/
+├── backend/                  # FastAPI Application
+│   ├── alembic/              # Database schema migrations
+│   ├── app/
+│   │   ├── api/              # API routers and endpoints
+│   │   ├── config/           # Pydantic environment configurations
+│   │   ├── models/           # SQLAlchemy ORM database models
+│   │   ├── repositories/     # Database CRUD access layer
+│   │   ├── schemas/          # Pydantic request/response schemas
+│   │   ├── security/         # HMAC hashing, rate limiters, JWT tokens
+│   │   ├── services/         # Business logic & ZIP stream builders
+│   │   ├── storage/          # Storage abstraction drivers (Local, AWS S3, Google Drive)
+│   │   └── workers/          # Background file cleanup worker thread
+│   ├── tests/                # Pytest unit & integration test suite
+│   ├── Dockerfile            # Container build specification for backend
+│   └── requirements.txt      # Python dependencies
+├── frontend/                 # Next.js 14 App Router UI
+│   ├── public/               # Static assets & icons
+│   ├── src/
+│   │   ├── app/              # Next.js pages & layout routes
+│   │   ├── components/       # Reusable React components & previewers
+│   │   └── lib/              # API clients & utility functions
+│   └── Dockerfile            # Container build specification for frontend
+├── docs/                     # Architectural specs & technical documentation
+├── storage/                  # Local storage mount directory (development)
+├── docker-compose.yml        # Docker orchestration (Postgres, Redis, Backend, Frontend)
+└── README.md                 # Project documentation
+```
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-                         USER
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │    Next.js UI    │
-                 │ React + TypeScript│
-                 └────────┬─────────┘
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │    FastAPI       │
-                 │    Backend       │
-                 └───────┬──────────┘
-                         │
-           ┌─────────────┼──────────────┐
-           │             │              │
-           ▼             ▼              ▼
-     PostgreSQL        Redis       Email (SMTP/API)
-           │             │              │
-           └─────────────┼──────────────┘
-                         │
-                         ▼
-                 StorageService (Strategy Pattern)
-                         │
-            ┌────────────┼────────────┐
-            ▼            ▼            ▼
-         AWS S3     Google Drive    Local
+                         USER / BROWSER
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │     Next.js 14      │
+                    │ React + TypeScript  │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │     FastAPI         │
+                    │  Async Python API   │
+                    └──────────┬──────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+            ▼                  ▼                  ▼
+      PostgreSQL 16         Redis 7            Email Drivers
+  (Metadata & Locks)    (Rate Limits)      (Gmail / SMTP / S3)
+            │                  │                  │
+            └──────────────────┼──────────────────┘
+                               │
+                               ▼
+                     StorageService Engine
+                               │
+            ┌──────────────────┴──────────────────┐
+            ▼                                     ▼
+     AWS S3 / Google Drive                  Local Disk Storage
 ```
 
-For detailed architectural diagrams and data flows, see [docs/architecture.md](docs/architecture.md).
+For detailed data flow diagrams and sequence charts, see [docs/architecture.md](docs/architecture.md).
 
 ---
 
@@ -68,50 +110,51 @@ For detailed architectural diagrams and data flows, see [docs/architecture.md](d
 
 | Layer | Technology | Description |
 |-------|------------|-------------|
-| **Frontend** | Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS | Responsive UI & client-side stream handling |
-| **Backend** | Python 3.12+, FastAPI, Pydantic v2 | High-performance async REST API |
-| **Database** | PostgreSQL 16, SQLAlchemy 2.0, Alembic | Metadata storage & transaction locks |
-| **Cache & Rate Limiting** | Redis 7 | Distributed rate limiting & session state |
-| **Storage Engine** | **AWS S3** / Google Drive API / Local | Swappable cloud object storage drivers (`boto3`) |
-| **Email Delivery** | Gmail API, SMTP, Resend, SendGrid, Brevo | Multi-driver email notification system |
+| **Frontend** | Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS | Responsive UI, client streaming, and glassmorphism styling |
+| **Backend** | Python 3.12+, FastAPI, Pydantic v2 | Asynchronous REST API framework |
+| **Database** | PostgreSQL 16, SQLAlchemy 2.0 (Async), Alembic | Relational database with atomic `SELECT ... FOR UPDATE` locks |
+| **Cache & Rate Limit** | Redis 7 | Distributed sliding-window rate limiters & session guards |
+| **Storage Engines** | AWS S3, Google Drive API, Local Storage | Extensible plug-and-play storage provider architecture |
+| **Email Drivers** | Gmail API, SMTP, Resend, SendGrid, Brevo | Multi-provider email notification engine |
+| **DevOps** | Docker, Docker Compose | Unified multi-container orchestration |
 
 ---
 
-## 🚀 Quick Start: How to Run the Website
+## 🚀 Quick Start: How to Run
 
-You can start BurnDrop using either **Docker Compose** (recommended for full stack setup) or **Manually** (for local frontend/backend development).
+You can run BurnDrop either with **Docker Compose** (recommended) or **Manually** for local development.
 
 ---
 
 ### Option 1 — Run with Docker Compose (Recommended)
 
-Starts PostgreSQL, Redis, Backend FastAPI service, and Frontend Next.js app in unified containers.
+Starts PostgreSQL, Redis, FastAPI Backend, and Next.js Frontend in isolated containers with a single command.
 
 #### 1. Clone & Configure Environment
 ```bash
+git clone https://github.com/ravixpanchal/BurnDrop.git
+cd BurnDrop
 cp .env.example .env
 ```
-*(Edit `.env` to configure your AWS S3 bucket credentials or preferred storage backend).*
 
-#### 2. Build & Launch Containers
-```bash
-docker-compose up --build
-```
-*(Or `docker compose up --build` for Docker Compose v2)*
-
-To run in detached (background) mode:
+#### 2. Launch Services
 ```bash
 docker-compose up --build -d
 ```
+*(Or `docker compose up --build -d` for Docker Compose v2)*
 
-#### 3. Access the Application
-- 🌐 **Website Frontend**: [http://localhost:3000](http://localhost:3000)
-- 🔑 **Receive File Page**: [http://localhost:3000/retrieve](http://localhost:3000/retrieve)
+#### 3. Access App URLs
+- 🌐 **Web Frontend**: [http://localhost:3000](http://localhost:3000)
+- 🔑 **Receive / Retrieve File**: [http://localhost:3000/retrieve](http://localhost:3000/retrieve)
 - ⚡ **Backend API**: [http://localhost:8000](http://localhost:8000)
-- 📄 **Interactive Swagger API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- 📄 **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-To stop all services cleanly:
+To view logs or stop containers:
 ```bash
+# View live logs
+docker-compose logs -f
+
+# Stop containers
 docker-compose down
 ```
 
@@ -119,13 +162,12 @@ docker-compose down
 
 ### Option 2 — Run Manually (Local Development)
 
-#### Step 1 — Start Databases (PostgreSQL + Redis)
+#### Step 1: Start PostgreSQL & Redis
 ```bash
 docker-compose up postgres redis -d
 ```
 
-#### Step 2 — Start Backend API
-Open **Terminal 1**:
+#### Step 2: Start FastAPI Backend
 ```bash
 cd backend
 python3 -m venv venv
@@ -135,82 +177,76 @@ uvicorn app.main:app --reload --port 8000
 ```
 Backend runs at **http://localhost:8000**.
 
-#### Step 3 — Start Frontend Website
-Open **Terminal 2**:
+#### Step 3: Start Next.js Frontend
+Open a new terminal window:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Website runs at **http://localhost:3000**.
+Frontend runs at **http://localhost:3000**.
 
 ---
 
-## ☁️ Cloud Storage Driver Configuration
+## 🔌 API Reference
 
-BurnDrop supports three storage backends configured via `STORAGE_BACKEND` in `.env`:
+### Core REST Endpoints
 
-### 1. AWS S3 Storage (`STORAGE_BACKEND=s3`) — Recommended
-```env
-STORAGE_BACKEND=s3
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
-AWS_REGION=eu-north-1
-AWS_S3_BUCKET_NAME=your-s3-bucket-name
-```
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/health` | None | Returns application health status |
+| `GET` | `/api/config` | None | Returns public limits (max file size, expiration hours, social links) |
+| `POST` | `/api/shares` | Rate-Limited | Uploads file(s) and recipient email. Returns 8-char PIN code |
+| `POST` | `/api/shares/verify` | Rate-Limited | Validates PIN code. Returns single-use JWT access token and file metadata |
+| `GET` | `/api/shares/access/download` | Bearer Token | Streams file download or multi-file `.ZIP` archive |
+| `GET` | `/api/shares/access/view` | Bearer Token | Streams inline preview for safe MIME types (images, PDF, plain text) |
 
-### 2. Local Filesystem (`STORAGE_BACKEND=local`)
-```env
-STORAGE_BACKEND=local
-LOCAL_STORAGE_PATH=storage
-```
-
-### 3. Google Drive (`STORAGE_BACKEND=google_drive`)
-```env
-STORAGE_BACKEND=google_drive
-GOOGLE_DRIVE_FOLDER_ID=your_folder_id
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REFRESH_TOKEN=your_refresh_token
+#### Example: Verify Code & Obtain Access Token
+```bash
+curl -X POST "http://localhost:8000/api/shares/verify" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "K7X9-P2LM"}'
 ```
 
 ---
 
-## ✉️ Email Driver Configuration
+## ⚙️ Environment Variables
 
-Configure `EMAIL_SERVICE` in your `.env` file depending on your preferred email provider:
+Copy `.env.example` to `.env` and set your environment configurations:
 
-### 1. Gmail API (`EMAIL_SERVICE=gmail`)
-Recommended for deployments on cloud providers (such as Render) that block outbound SMTP ports 587/465.
+### Application & Database Settings
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `APP_NAME` | `BurnDrop` | Main application title |
+| `APP_BASE_URL` | `http://localhost:3000` | Frontend web URL |
+| `API_BASE_URL` | `http://localhost:8000` | Backend API URL |
+| `APP_SECRET` | *(Random String)* | Secret key for signing access tokens and PIN hashes |
+| `DATABASE_URL` | `postgresql+asyncpg://...` | Async PostgreSQL connection string |
+| `REDIS_URL` | `redis://redis:6379/0` | Redis connection URL |
+
+### Storage & Limits Configuration
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `MAX_FILE_SIZE_MB` | `1024` | Maximum total file size limit per upload batch (in MB) |
+| `FILE_EXPIRATION_HOURS` | `3` | Hours before files automatically expire and burn |
+| `STORAGE_BACKEND` | `s3` | Storage engine choice (`local`, `s3`, or `google_drive`) |
+| `AWS_S3_BUCKET_NAME` | `your_s3_bucket` | Bucket name when `STORAGE_BACKEND=s3` |
+| `GOOGLE_DRIVE_FOLDER_ID`| `folder_id` | Folder ID when `STORAGE_BACKEND=google_drive` |
+
+### Email Driver Configurations
+Set `EMAIL_SERVICE` depending on your provider choice (`gmail`, `resend`, `sendgrid`, `brevo`, `smtp`):
+
 ```env
+# Gmail API Driver
 EMAIL_SERVICE=gmail
-EMAIL_FROM=your-gmail-address@gmail.com
-```
+EMAIL_FROM=your-email@gmail.com
 
-### 2. Resend (`EMAIL_SERVICE=resend`)
-HTTP API delivery for custom domain names.
-```env
+# Resend Driver
 EMAIL_SERVICE=resend
 EMAIL_FROM=noreply@yourdomain.com
 RESEND_API_KEY=re_your_api_key
-```
 
-### 3. SendGrid (`EMAIL_SERVICE=sendgrid`)
-```env
-EMAIL_SERVICE=sendgrid
-EMAIL_FROM=noreply@yourdomain.com
-SENDGRID_API_KEY=your_sendgrid_api_key
-```
-
-### 4. Brevo (`EMAIL_SERVICE=brevo`)
-```env
-EMAIL_SERVICE=brevo
-EMAIL_FROM=noreply@yourdomain.com
-BREVO_API_KEY=your_brevo_api_key
-```
-
-### 5. Standard SMTP (`EMAIL_SERVICE=smtp`)
-```env
+# Standard SMTP Driver
 EMAIL_SERVICE=smtp
 EMAIL_FROM=your-email@gmail.com
 EMAIL_USERNAME=your-email@gmail.com
@@ -223,17 +259,17 @@ EMAIL_SMTP_PORT=587
 
 ## 🔑 Security Model
 
-- **HMAC-SHA256 Code Hashing**: Plaintext PIN codes are never stored in the database.
-- **Atomic Single-Use Locking**: Prevents concurrent race conditions via PostgreSQL `SELECT ... FOR UPDATE`.
-- **Redis Rate Limiting**: Enforces request caps on upload, PIN verification, and invalid code attempts.
-- **Safe Previews Only**: Strictly restricts inline viewing to safe MIME types (images, PDF, plain text).
-- **Automated S3 Purging**: Background cleanup loop automatically deletes expired payloads from AWS S3.
+- **HMAC-SHA256 Hashing**: One-time PIN codes are never stored as plaintext in the database.
+- **Atomic Single-Use Locking**: Database operations enforce strict single-use semantics using PostgreSQL row locks (`SELECT ... FOR UPDATE`), preventing race conditions.
+- **Short-Lived Access Tokens**: Verification yields single-use JWT bearer tokens valid for 15 minutes.
+- **Sliding-Window Rate Limiting**: Redis enforces tiered IP rate limits across upload creation, PIN verification, and invalid PIN attempts.
+- **Controlled Previews**: Inline content rendering is strictly whitelisted to non-executable media types (PDF, JPEG, PNG, GIF, WEBP, Plain Text).
 
 ---
 
 ## 🧪 Running Tests
 
-Run backend unit and storage tests:
+Execute backend tests with Pytest:
 ```bash
 cd backend
 source venv/bin/activate
@@ -246,14 +282,14 @@ PYTHONPATH=. pytest -v
 
 Created with ❤️ by **Ravi Panchal**
 
-- 🌐 **Live Website**: [https://www.burn-drop.tech](https://www.burn-drop.tech)
-- 🐙 **GitHub**: [@ravixpanchal](https://github.com/ravixpanchal)
-- 💼 **LinkedIn**: [Ravi Panchal](https://linkedin.com/in/ravixpanchal)
-- 📸 **Instagram**: [@ravixpanchal](https://instagram.com/ravixpanchal)
-- 🐦 **X (Twitter)**: [@ravixpanchal](https://x.com/ravixpanchal)
+- **GitHub**: [@ravixpanchal](https://github.com/ravixpanchal)
+- **LinkedIn**: [Ravi Panchal](https://linkedin.com/in/ravixpanchal)
+- **Instagram**: [@ravixpanchal](https://instagram.com/ravixpanchal)
+- **X (Twitter)**: [@ravixpanchal](https://x.com/ravixpanchal)
 
 ---
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is open-source software licensed under the [MIT License](LICENSE).
+

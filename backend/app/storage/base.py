@@ -32,3 +32,10 @@ class StorageService(ABC):
     @abstractmethod
     async def get_metadata(self, key: str) -> StorageMetadata | None:
         """Get file metadata."""
+
+    async def generate_presigned_upload_url(
+        self, key: str, mime_type: str | None, expires_in: int = 3600
+    ) -> str | None:
+        """Generate a presigned URL for direct client upload (PUT). Returns None if unsupported."""
+        return None
+

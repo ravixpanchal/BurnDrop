@@ -135,6 +135,160 @@ class ShareService:
 
         return share, code, email_sent  # type: ignore[return-value]
 
+    async def create_presigned_uploads(
+        self,
+        sender_email: str,
+        files_meta: list[dict],
+    ) -> dict:
+        if not validate_email(sender_email):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email address.")
+
+        if not files_meta:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
+
+        total_size = sum(f.get("size_bytes", 0) for f in files_meta)
+        if total_size > self.settings.max_file_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Combined file size too large. The maximum supported total size is 1 GB.",
+            )
+
+        share_id = uuid.uuid4()
+        upload_items = []
+
+        for f_info in files_meta:
+            filename = f_info.get("filename", "file")
+            size_bytes = f_info.get("size_bytes", 0)
+            mime_type = f_info.get("mime_type")
+
+            orig_path = sanitize_relative_path(filename)
+            file_id = uuid.uuid4()
+            basename = os.path.basename(orig_path)
+            storage_key = f"shares/{share_id}/{file_id}/{basename}"
+
+            upload_url = await self.storage.generate_presigned_upload_url(
+                key=storage_key,
+                mime_type=mime_type,
+            )
+
+            if not upload_url:
+                return {
+                    "direct_upload_supported": False,
+                    "share_id": str(share_id),
+                    "email": sender_email.strip().lower(),
+                    "upload_urls": [],
+                }
+
+            upload_items.append({
+                "file_id": str(file_id),
+                "filename": orig_path,
+                "size_bytes": size_bytes,
+                "mime_type": mime_type,
+                "storage_key": storage_key,
+                "upload_url": upload_url,
+            })
+
+        return {
+            "direct_upload_supported": True,
+            "share_id": str(share_id),
+            "email": sender_email.strip().lower(),
+            "upload_urls": upload_items,
+        }
+
+    async def complete_direct_share(
+        self,
+        share_id_str: str,
+        sender_email: str,
+        files_info: list[dict],
+    ) -> tuple[Share, str, bool]:
+        if not validate_email(sender_email):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email address.")
+
+        if not files_info:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
+
+        try:
+            share_id = uuid.UUID(share_id_str)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid share ID format.")
+
+        share_files: list[ShareFile] = []
+        total_size = 0
+
+        for item in files_info:
+            file_id_str = item.get("file_id")
+            orig_path = sanitize_relative_path(item.get("filename", "file"))
+            size_bytes = item.get("size_bytes", 0)
+            mime_type = item.get("mime_type")
+            storage_key = item.get("storage_key")
+
+            if not storage_key or not file_id_str:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing storage key or file ID.")
+
+            try:
+                file_id = uuid.UUID(file_id_str)
+            except ValueError:
+                file_id = uuid.uuid4()
+
+            exists = await self.storage.exists(storage_key)
+            if not exists:
+                logger.warning("File key %s does not exist in storage during direct share completion", storage_key)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Uploaded file '{orig_path}' could not be verified in storage.",
+                )
+
+            total_size += size_bytes
+            sf = ShareFile(
+                id=file_id,
+                share_id=share_id,
+                original_filename=orig_path,
+                file_size=size_bytes,
+                mime_type=mime_type,
+                storage_key=storage_key,
+            )
+            share_files.append(sf)
+
+        if total_size > self.settings.max_file_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Combined file size too large. The maximum supported total size is 1 GB.",
+            )
+
+        if len(files_info) == 1:
+            main_filename = share_files[0].original_filename
+            main_mime = share_files[0].mime_type
+        else:
+            first_name = os.path.basename(share_files[0].original_filename)
+            base_first, _ = os.path.splitext(first_name)
+            main_filename = f"{base_first}_and_{len(files_info) - 1}_more.zip"
+            main_mime = "application/zip"
+
+        code = generate_share_code()
+        code_h = hash_code(code, self.settings.app_secret)
+        now = datetime.now(UTC)
+        expires_at = now + timedelta(hours=self.settings.file_expiration_hours)
+
+        share = Share(
+            share_id=share_id,
+            code_hash=code_h,
+            sender_email=sender_email.strip().lower(),
+            original_filename=main_filename,
+            file_size=total_size,
+            mime_type=main_mime,
+            storage_key=share_files[0].storage_key,
+            status=ShareStatus.ACTIVE,
+            expires_at=expires_at,
+            files=share_files,
+        )
+        await self.repo.create(share)
+
+        asyncio.create_task(send_share_code_email(sender_email, code))
+        email_sent = True
+
+        return share, code, email_sent  # type: ignore[return-value]
+
+
     async def verify_code(self, code: str) -> dict:
         if not validate_code_format(code):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid code format.")

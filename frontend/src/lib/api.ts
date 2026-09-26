@@ -47,15 +47,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
-export function uploadFiles(
-  files: File | File[],
+async function uploadFilesMultipart(
+  fileList: File[],
   email: string,
   onProgress: (percent: number, loaded: number, total: number) => void,
 ): Promise<ShareCreateResponse> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
-    const fileList = Array.isArray(files) ? files : [files];
     fileList.forEach((f) => {
       const relPath = (f as any).webkitRelativePath || f.name;
       formData.append('files', f, relPath);
@@ -107,6 +106,109 @@ export function uploadFiles(
     xhr.open('POST', `${config.apiUrl}/api/shares`);
     xhr.send(formData);
   });
+}
+
+export async function uploadFiles(
+  files: File | File[],
+  email: string,
+  onProgress: (percent: number, loaded: number, total: number) => void,
+): Promise<ShareCreateResponse> {
+  const fileList = Array.isArray(files) ? files : [files];
+  if (fileList.length === 0) {
+    throw new ApiError(400, 'No files provided');
+  }
+
+  try {
+    const presignedReqBody = {
+      email,
+      files: fileList.map((f) => ({
+        filename: (f as any).webkitRelativePath || f.name,
+        size_bytes: f.size,
+        mime_type: f.type || null,
+      })),
+    };
+
+    const presignedRes = await fetch(`${config.apiUrl}/api/shares/presigned`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(presignedReqBody),
+    });
+
+    if (presignedRes.ok) {
+      const presignedData = await presignedRes.json();
+      if (
+        presignedData.direct_upload_supported &&
+        Array.isArray(presignedData.upload_urls) &&
+        presignedData.upload_urls.length === fileList.length
+      ) {
+        const totalSize = fileList.reduce((acc, f) => acc + f.size, 0);
+        const loadedBytes = new Array(fileList.length).fill(0);
+
+        const uploadPromises = fileList.map((file, idx) => {
+          const item = presignedData.upload_urls[idx];
+          return new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener('progress', (e) => {
+              if (e.lengthComputable) {
+                loadedBytes[idx] = e.loaded;
+                const grandTotalLoaded = loadedBytes.reduce((a, b) => a + b, 0);
+                const percent = Math.min(100, Math.round((grandTotalLoaded / totalSize) * 100));
+                onProgress(percent, grandTotalLoaded, totalSize);
+              }
+            });
+
+            xhr.addEventListener('load', () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                loadedBytes[idx] = file.size;
+                const grandTotalLoaded = loadedBytes.reduce((a, b) => a + b, 0);
+                const percent = Math.min(100, Math.round((grandTotalLoaded / totalSize) * 100));
+                onProgress(percent, grandTotalLoaded, totalSize);
+                resolve();
+              } else {
+                reject(new ApiError(xhr.status, `Direct upload to cloud storage failed for ${file.name}`));
+              }
+            });
+
+            xhr.addEventListener('error', () => {
+              reject(new ApiError(0, `Network error uploading ${file.name} to cloud storage`));
+            });
+
+            xhr.open('PUT', item.upload_url);
+            if (file.type) {
+              xhr.setRequestHeader('Content-Type', file.type);
+            }
+            xhr.send(file);
+          });
+        });
+
+        await Promise.all(uploadPromises);
+
+        const completeRes = await fetch(`${config.apiUrl}/api/shares/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            share_id: presignedData.share_id,
+            email: email,
+            files: presignedData.upload_urls.map((u: any) => ({
+              file_id: u.file_id,
+              filename: u.filename,
+              size_bytes: u.size_bytes,
+              mime_type: u.mime_type,
+              storage_key: u.storage_key,
+            })),
+          }),
+        });
+
+        return handleResponse<ShareCreateResponse>(completeRes);
+      }
+    }
+  } catch (err) {
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+      throw err;
+    }
+  }
+
+  return uploadFilesMultipart(fileList, email, onProgress);
 }
 
 export function uploadFile(

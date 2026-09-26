@@ -47,3 +47,45 @@ class ConfigResponse(BaseModel):
     linkedin_url: str
     github_url: str
     contact_email: str
+
+
+class DirectUploadFileMeta(BaseModel):
+    filename: str
+    size_bytes: int
+    mime_type: str | None = None
+
+
+class PresignedUploadRequest(BaseModel):
+    email: EmailStr
+    files: list[DirectUploadFileMeta]
+
+
+class PresignedUploadItem(BaseModel):
+    file_id: str
+    filename: str
+    size_bytes: int
+    mime_type: str | None
+    storage_key: str
+    upload_url: str
+
+
+class PresignedUploadResponse(BaseModel):
+    direct_upload_supported: bool
+    share_id: str
+    email: str
+    upload_urls: list[PresignedUploadItem] = []
+
+
+class CompleteDirectUploadItem(BaseModel):
+    file_id: str
+    filename: str
+    size_bytes: int
+    mime_type: str | None = None
+    storage_key: str
+
+
+class CompleteDirectUploadRequest(BaseModel):
+    share_id: str
+    email: EmailStr
+    files: list[CompleteDirectUploadItem]
+

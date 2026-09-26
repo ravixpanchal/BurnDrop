@@ -42,11 +42,15 @@ class GoogleDriveStorageService(StorageService):
             "parents": [self.folder_id],
         }
         media = self._MediaIoBaseUpload(buffer, mimetype=mime_type or "application/octet-stream", resumable=True, chunksize=CHUNK_SIZE * 256)
-        file = (
-            self.service.files()
-            .create(body=file_metadata, media_body=media, fields="id", supportsAllDrives=True)
-            .execute()
-        )
+
+        def _do_upload():
+            return (
+                self.service.files()
+                .create(body=file_metadata, media_body=media, fields="id", supportsAllDrives=True)
+                .execute()
+            )
+
+        file = await asyncio.to_thread(_do_upload)
         return file["id"]
 
     async def download(self, key: str) -> AsyncIterator[bytes]:
@@ -55,7 +59,10 @@ class GoogleDriveStorageService(StorageService):
         downloader = self._MediaIoBaseDownload(buffer, request, chunksize=CHUNK_SIZE)
         done = False
         while not done:
-            _, done = downloader.next_chunk()
+            def _next_chunk():
+                return downloader.next_chunk()
+
+            _, done = await asyncio.to_thread(_next_chunk)
             buffer.seek(0)
             data = buffer.read()
             buffer.seek(0)
@@ -64,26 +71,35 @@ class GoogleDriveStorageService(StorageService):
                 yield data
 
     async def delete(self, key: str) -> bool:
-        try:
+        def _do_delete():
             self.service.files().delete(fileId=key, supportsAllDrives=True).execute()
+
+        try:
+            await asyncio.to_thread(_do_delete)
             return True
         except Exception:
             return False
 
     async def exists(self, key: str) -> bool:
-        try:
+        def _do_get():
             self.service.files().get(fileId=key, fields="id", supportsAllDrives=True).execute()
+
+        try:
+            await asyncio.to_thread(_do_get)
             return True
         except Exception:
             return False
 
     async def get_metadata(self, key: str) -> StorageMetadata | None:
-        try:
-            meta = (
+        def _do_meta():
+            return (
                 self.service.files()
                 .get(fileId=key, fields="id,size,mimeType", supportsAllDrives=True)
                 .execute()
             )
+
+        try:
+            meta = await asyncio.to_thread(_do_meta)
             return StorageMetadata(
                 key=meta["id"],
                 size=int(meta.get("size", 0)),

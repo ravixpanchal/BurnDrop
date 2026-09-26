@@ -115,3 +115,27 @@ class S3StorageService(StorageService):
             )
         except Exception:
             return None
+
+    async def generate_presigned_upload_url(
+        self, key: str, mime_type: str | None, expires_in: int = 3600
+    ) -> str | None:
+        if not self.bucket_name:
+            return None
+
+        extra_params = {"Bucket": self.bucket_name, "Key": key}
+        if mime_type:
+            extra_params["ContentType"] = mime_type
+
+        def _gen():
+            return self.s3_client.generate_presigned_url(
+                ClientMethod="put_object",
+                Params=extra_params,
+                ExpiresIn=expires_in,
+            )
+
+        try:
+            return await asyncio.to_thread(_gen)
+        except Exception as e:
+            logger.warning("Failed to generate presigned upload URL for key '%s': %s", key, e)
+            return None
+
