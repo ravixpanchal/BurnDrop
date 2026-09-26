@@ -24,13 +24,14 @@
 
 - **🔒 Zero-Signup Temporary Sharing**: Start uploading instantly without user accounts or password registration.
 - **📁 Multi-File Upload & ZIP Bundling**: Upload single files or batches up to 1 GB total. Multi-file shares are automatically streamed as single-click `.ZIP` archives.
+- **⚡ High-Speed Direct-to-Cloud S3 Uploads**: Support for AWS S3 Presigned URLs allows browser clients to upload files directly to cloud storage, boosting transfer speeds up to 5x while eliminating server RAM bottlenecks.
 - **🔑 Cryptographically Secure One-Time PINs**: High-entropy 8-character codes (e.g. `K7X9-P2LM`) hashed via HMAC-SHA256.
 - **📩 Multi-Driver Email Dispatch**: Deliver access codes instantly using **Gmail API**, **SMTP**, **Resend**, **SendGrid**, or **Brevo**.
 - **🔍 Safe Inline Browser Previews**: Securely inspect PDFs, images, and plain text without executing scripts or downloading files.
-- **⚡ Low-Memory Chunked Streaming**: Memory-efficient streaming pipelines for uploads and downloads handle multi-gigabyte transfers with low RAM footprint.
+- **⚡ Low-Memory Chunked Streaming & Non-Blocking Drivers**: Memory-efficient streaming pipelines and threaded storage workers handle multi-gigabyte transfers with zero event-loop stalls.
 - **⏱️ Automatic Expiration & Destruction**: Shares auto-expire after 3 hours (configurable). A background worker thread purges files from storage automatically.
 - **🛡️ Brute-Force & Abuse Protection**: Redis-backed sliding window rate limiters protect upload routes, verification attempts, and IP failure thresholds.
-- **☁️ Multi-Provider Storage Drivers**: Seamless abstraction supporting **Local Filesystem**, **AWS S3**, and **Google Drive API**.
+- **☁️ Multi-Provider Storage Drivers**: Seamless abstraction supporting **Local Filesystem**, **AWS S3 (Direct & Proxied)**, and **Google Drive API**.
 - **📱 Fluid Responsive UI**: Fully responsive UI tailored for mobile screens (320px+), tablets, laptops, and 4K displays.
 
 ---
@@ -72,34 +73,36 @@ BurnDrop/
 ## 🏗️ Architecture
 
 ```
-                         USER / BROWSER
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │     Next.js 14      │
-                    │ React + TypeScript  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │     FastAPI         │
-                    │  Async Python API   │
-                    └──────────┬──────────┘
-                               │
-            ┌──────────────────┼──────────────────┐
-            │                  │                  │
-            ▼                  ▼                  ▼
-      PostgreSQL 16         Redis 7            Email Drivers
-  (Metadata & Locks)    (Rate Limits)      (Gmail / SMTP / S3)
-            │                  │                  │
-            └──────────────────┼──────────────────┘
-                               │
-                               ▼
-                     StorageService Engine
-                               │
-            ┌──────────────────┴──────────────────┐
-            ▼                                     ▼
-     AWS S3 / Google Drive                  Local Disk Storage
+                               USER / BROWSER
+                                     │
+                 ┌───────────────────┴───────────────────┐
+                 │                                       │
+                 ▼ (Direct Presigned S3 Upload)          ▼
+        ┌──────────────────┐                   ┌──────────────────┐
+        │   AWS S3 Bucket  │                   │    Next.js 14    │
+        │ (Direct Storage) │                   │ React + TypeScript│
+        └────────┬─────────┘                   └─────────┬────────┘
+                 ▲                                       │
+                 │ (Get Signed URL / Complete)           ▼
+                 │                             ┌──────────────────┐
+                 └─────────────────────────────┤     FastAPI      │
+                                               │  Async Python API│
+                                               └─────────┬────────┘
+                                                         │
+                      ┌──────────────────────────────────┼──────────────────────────────────┐
+                      │                                  │                                  │
+                      ▼                                  ▼                                  ▼
+                PostgreSQL 16                         Redis 7                         Email Drivers
+            (Metadata & Row Locks)                 (Rate Limits)                  (Gmail / SMTP / Resend)
+                      │                                  │                                  │
+                      └──────────────────────────────────┼──────────────────────────────────┘
+                                                         │
+                                                         ▼
+                                              StorageService Engine
+                                                         │
+                      ┌──────────────────────────────────┴──────────────────────────────────┐
+                      ▼                                                                     ▼
+               AWS S3 Storage                                                      Local Disk / Drive
 ```
 
 For detailed data flow diagrams and sequence charts, see [docs/architecture.md](docs/architecture.md).
@@ -196,7 +199,9 @@ Frontend runs at **http://localhost:3000**.
 |--------|----------|------|-------------|
 | `GET` | `/api/health` | None | Returns application health status |
 | `GET` | `/api/config` | None | Returns public limits (max file size, expiration hours, social links) |
-| `POST` | `/api/shares` | Rate-Limited | Uploads file(s) and recipient email. Returns 8-char PIN code |
+| `POST` | `/api/shares/presigned` | Rate-Limited | Generates S3 presigned URLs for direct client uploads |
+| `POST` | `/api/shares/complete` | Rate-Limited | Finalizes direct S3 upload and returns 8-character PIN code |
+| `POST` | `/api/shares` | Rate-Limited | Fallback endpoint for standard multipart form uploads |
 | `POST` | `/api/shares/verify` | Rate-Limited | Validates PIN code. Returns single-use JWT access token and file metadata |
 | `GET` | `/api/shares/access/download` | Bearer Token | Streams file download or multi-file `.ZIP` archive |
 | `GET` | `/api/shares/access/view` | Bearer Token | Streams inline preview for safe MIME types (images, PDF, plain text) |
