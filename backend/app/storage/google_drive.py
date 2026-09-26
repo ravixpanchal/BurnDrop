@@ -96,10 +96,22 @@ class GoogleDriveStorageService(StorageService):
 @lru_cache
 def get_storage_service() -> StorageService:
     settings = get_settings()
-    if settings.storage_backend == "google_drive":
+    if settings.storage_backend == "s3":
+        try:
+            from app.storage.s3 import S3StorageService
+
+            return S3StorageService()
+        except Exception as e:
+            import logging
+
+            logging.warning("S3 storage service initialization failed: %s; falling back to local storage.", e)
+            return LocalStorageService()
+    elif settings.storage_backend == "google_drive":
         try:
             return GoogleDriveStorageService()
         except Exception as e:
-            logger.warning("Google Drive storage service initialization failed: %s; falling back to local storage.", e)
+            import logging
+
+            logging.warning("Google Drive storage service initialization failed: %s; falling back to local storage.", e)
             return LocalStorageService()
     return LocalStorageService()

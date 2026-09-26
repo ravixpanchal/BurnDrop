@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     google_refresh_token: str = ""
     storage_backend: str = "local"
 
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "us-east-1"
+    aws_s3_bucket_name: str = ""
+
     email_from: str = "ravi.panchal.kaithi@gmail.com"
     email_username: str = "ravi.panchal.kaithi@gmail.com"
     email_password: str = ""
