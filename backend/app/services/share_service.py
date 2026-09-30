@@ -154,9 +154,7 @@ class ShareService:
             )
 
         share_id = uuid.uuid4()
-        upload_items = []
-
-        for f_info in files_meta:
+        async def process_file(f_info: dict) -> dict | None:
             filename = f_info.get("filename", "file")
             size_bytes = f_info.get("size_bytes", 0)
             mime_type = f_info.get("mime_type")
@@ -172,21 +170,28 @@ class ShareService:
             )
 
             if not upload_url:
-                return {
-                    "direct_upload_supported": False,
-                    "share_id": str(share_id),
-                    "email": sender_email.strip().lower(),
-                    "upload_urls": [],
-                }
+                return None
 
-            upload_items.append({
+            return {
                 "file_id": str(file_id),
                 "filename": orig_path,
                 "size_bytes": size_bytes,
                 "mime_type": mime_type,
                 "storage_key": storage_key,
                 "upload_url": upload_url,
-            })
+            }
+
+        results = await asyncio.gather(*(process_file(f) for f in files_meta))
+        
+        if None in results:
+            return {
+                "direct_upload_supported": False,
+                "share_id": str(share_id),
+                "email": sender_email.strip().lower(),
+                "upload_urls": [],
+            }
+            
+        upload_items = list(results)
 
         return {
             "direct_upload_supported": True,
@@ -212,10 +217,7 @@ class ShareService:
         except ValueError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid share ID format.")
 
-        share_files: list[ShareFile] = []
-        total_size = 0
-
-        for item in files_info:
+        async def verify_file(item: dict) -> ShareFile:
             file_id_str = item.get("file_id")
             orig_path = sanitize_relative_path(item.get("filename", "file"))
             size_bytes = item.get("size_bytes", 0)
@@ -238,8 +240,7 @@ class ShareService:
                     detail=f"Uploaded file '{orig_path}' could not be verified in storage.",
                 )
 
-            total_size += size_bytes
-            sf = ShareFile(
+            return ShareFile(
                 id=file_id,
                 share_id=share_id,
                 original_filename=orig_path,
@@ -247,7 +248,9 @@ class ShareService:
                 mime_type=mime_type,
                 storage_key=storage_key,
             )
-            share_files.append(sf)
+
+        share_files = await asyncio.gather(*(verify_file(item) for item in files_info))
+        total_size = sum(item.get("size_bytes", 0) for item in files_info)
 
         if total_size > self.settings.max_file_size_bytes:
             raise HTTPException(

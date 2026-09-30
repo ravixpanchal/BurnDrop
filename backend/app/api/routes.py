@@ -1,9 +1,10 @@
 import logging
+import os
 from collections.abc import AsyncIterator
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Request, UploadFile, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
@@ -167,7 +168,7 @@ async def _stream_share(
     inline: bool,
     file_id: str | None = None,
     download_all: bool = False,
-) -> StreamingResponse:
+) -> StreamingResponse | RedirectResponse:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
 
@@ -179,6 +180,37 @@ async def _stream_share(
     storage = get_storage_service()
     service = ShareService(db, storage)
     share = await service.consume_and_get_share(share_id)
+    
+    # Try direct presigned URL download if it's a single file
+    if not download_all and not (share.files and len(share.files) > 1 and not file_id):
+        target_file = None
+        if file_id:
+            for sf in share.files:
+                if str(sf.id) == file_id:
+                    target_file = sf
+                    break
+        else:
+            if share.files:
+                target_file = share.files[0]
+                
+        # If we found the target file, try to generate a presigned download URL
+        if target_file and hasattr(storage, 'generate_presigned_download_url'):
+            presigned_url = await storage.generate_presigned_download_url(
+                key=target_file.storage_key,
+                filename=os.path.basename(target_file.original_filename),
+                inline=inline
+            )
+            if presigned_url:
+                return RedirectResponse(url=presigned_url)
+        elif not share.files and not share.original_filename.endswith(".zip") and hasattr(storage, 'generate_presigned_download_url'):
+            # Legacy single file fallback
+            presigned_url = await storage.generate_presigned_download_url(
+                key=share.storage_key,
+                filename=share.original_filename,
+                inline=inline
+            )
+            if presigned_url:
+                return RedirectResponse(url=presigned_url)
 
     if file_id:
         streamer, filename, mime_type, file_size = await service.stream_single_file(share, file_id)
@@ -214,16 +246,20 @@ async def download_share(
     file_id: str | None = None,
     download_all: bool = False,
     authorization: str | None = Header(None),
+    token: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    return await _stream_share(authorization, db, inline=False, file_id=file_id, download_all=download_all)
+    auth = authorization or (f"Bearer {token}" if token else None)
+    return await _stream_share(auth, db, inline=False, file_id=file_id, download_all=download_all)
 
 
 @router.get("/shares/access/view")
 async def view_share(
     file_id: str | None = None,
     authorization: str | None = Header(None),
+    token: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    return await _stream_share(authorization, db, inline=True, file_id=file_id)
+    auth = authorization or (f"Bearer {token}" if token else None)
+    return await _stream_share(auth, db, inline=True, file_id=file_id)
 

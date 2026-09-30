@@ -139,3 +139,32 @@ class S3StorageService(StorageService):
             logger.warning("Failed to generate presigned upload URL for key '%s': %s", key, e)
             return None
 
+    async def generate_presigned_download_url(
+        self, key: str, filename: str, inline: bool = False, expires_in: int = 3600
+    ) -> str | None:
+        if not self.bucket_name:
+            return None
+
+        from urllib.parse import quote
+        safe_filename = quote(filename)
+        disposition = "inline" if inline else "attachment"
+        response_disposition = f'{disposition}; filename="{safe_filename}"; filename*=UTF-8\'\'{safe_filename}'
+        extra_params = {
+            "Bucket": self.bucket_name,
+            "Key": key,
+            "ResponseContentDisposition": response_disposition,
+        }
+
+        def _gen():
+            return self.s3_client.generate_presigned_url(
+                ClientMethod="get_object",
+                Params=extra_params,
+                ExpiresIn=expires_in,
+            )
+
+        try:
+            return await asyncio.to_thread(_gen)
+        except Exception as e:
+            logger.warning("Failed to generate presigned download URL for key '%s': %s", key, e)
+            return None
+

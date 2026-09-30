@@ -1,0 +1,9 @@
+{
+  "name": "burndrop-root",
+  "version": "1.0.0",
+  "description": "Root helper for BurnDrop",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"\\n❌ ERROR: You are running this command in the root directory!\\n\\nTo start the frontend, run:\\n  cd frontend\\n  npm run dev\\n\\nTo start the backend, run:\\n  cd backend\\n  source venv/bin/activate\\n  uvicorn app.main:app --reload --port 8000\\n\" && exit 1"
+  }
+}

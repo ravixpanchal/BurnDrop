@@ -39,3 +39,9 @@ class StorageService(ABC):
         """Generate a presigned URL for direct client upload (PUT). Returns None if unsupported."""
         return None
 
+    async def generate_presigned_download_url(
+        self, key: str, filename: str, inline: bool = False, expires_in: int = 3600
+    ) -> str | None:
+        """Generate a presigned URL for direct client download (GET). Returns None if unsupported."""
+        return None
+

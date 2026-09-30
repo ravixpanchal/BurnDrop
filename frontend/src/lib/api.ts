@@ -228,17 +228,19 @@ export async function verifyCode(code: string): Promise<VerifyCodeResponse> {
   return handleResponse(response);
 }
 
-export function getDownloadUrl(fileId?: string, downloadAll?: boolean): string {
+export function getDownloadUrl(fileId?: string, downloadAll?: boolean, token?: string): string {
   const params = new URLSearchParams();
   if (fileId) params.append('file_id', fileId);
   if (downloadAll) params.append('download_all', 'true');
+  if (token) params.append('token', token);
   const qs = params.toString();
   return `${config.apiUrl}/api/shares/access/download${qs ? `?${qs}` : ''}`;
 }
 
-export function getViewUrl(fileId?: string): string {
+export function getViewUrl(fileId?: string, token?: string): string {
   const params = new URLSearchParams();
   if (fileId) params.append('file_id', fileId);
+  if (token) params.append('token', token);
   const qs = params.toString();
   return `${config.apiUrl}/api/shares/access/view${qs ? `?${qs}` : ''}`;
 }
@@ -255,31 +257,18 @@ export async function downloadFile(
   fileId?: string,
   downloadAll?: boolean,
 ): Promise<void> {
-  const url = getDownloadUrl(fileId, downloadAll);
-  const response = await fetchWithAuth(url, accessToken);
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, body.detail || 'Download failed');
-  }
-  const blob = await response.blob();
-  const blobUrl = URL.createObjectURL(blob);
+  const url = getDownloadUrl(fileId, downloadAll, accessToken);
+  
+  // Use a hidden a tag to trigger the browser's native download
   const a = document.createElement('a');
-  a.href = blobUrl;
+  a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(blobUrl);
 }
 
 export async function openPreview(accessToken: string, fileId?: string): Promise<void> {
-  const url = getViewUrl(fileId);
-  const response = await fetchWithAuth(url, accessToken);
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, body.detail || 'Preview failed');
-  }
-  const blob = await response.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  window.open(blobUrl, '_blank');
+  const url = getViewUrl(fileId, accessToken);
+  window.open(url, '_blank');
 }

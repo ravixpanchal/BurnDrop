@@ -123,9 +123,11 @@ For detailed data flow diagrams and sequence charts, see [docs/architecture.md](
 
 ---
 
-## 🚀 Quick Start: How to Run
+## 🚀 How do we run this project
 
 You can run BurnDrop either with **Docker Compose** (recommended) or **Manually** for local development.
+
+> **⚠️ IMPORTANT:** The project is split into `frontend` and `backend` directories. When running manually, ensure you change into the correct directory first (`cd backend` or `cd frontend`) before running the respective commands!
 
 ---
 
