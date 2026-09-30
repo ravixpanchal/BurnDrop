@@ -1,4 +1,4 @@
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://burndrop-backend.onrender.com');
 
 export const config = {
   appName: process.env.NEXT_PUBLIC_APP_NAME || 'BurnDrop',
