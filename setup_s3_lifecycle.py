@@ -32,7 +32,7 @@ def apply_lifecycle_rule():
                 'Prefix': '',  # Apply to all objects in the bucket
                 'Status': 'Enabled',
                 'Expiration': {
-                    'Days': 7  # Automatically delete after 7 days
+                    'Days': 1  # Automatically delete after 1 day
                 },
                 'AbortIncompleteMultipartUpload': {
                     'DaysAfterInitiation': 1 # Clean up failed uploads to save space
@@ -47,7 +47,7 @@ def apply_lifecycle_rule():
             LifecycleConfiguration=lifecycle_configuration
         )
         print(f"✅ Success! AWS S3 Lifecycle Rule applied to '{bucket_name}'.")
-        print("All stored data will now automatically be deleted exactly 7 days after it is uploaded.")
+        print("All stored data will now automatically be deleted 1 day after it is uploaded.")
         print("Incomplete/failed uploads will also be deleted after 1 day.")
     except Exception as e:
         print(f"❌ Failed to apply Lifecycle Rule: {e}")

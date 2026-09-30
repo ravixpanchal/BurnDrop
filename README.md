@@ -275,13 +275,13 @@ The Next.js frontend is configured to seamlessly support serverless deployments 
 When hosting the FastAPI backend on ephemeral hosting services (like Render's free tier), the server may spin down during inactivity. This can pause the background cleanup worker that deletes expired files.
 
 ### 🧹 Automatic AWS S3 Cleanup (Lifecycle Rules)
-If you are using `STORAGE_BACKEND=s3`, it is highly recommended to configure **AWS S3 Lifecycle Rules** rather than relying on the backend cleanup worker. Lifecycle rules guarantee that Amazon S3 will automatically and permanently delete files after exactly 7 days, even if your backend server is offline.
+If you are using `STORAGE_BACKEND=s3`, it is highly recommended to configure **AWS S3 Lifecycle Rules** rather than relying on the backend cleanup worker. Lifecycle rules guarantee that Amazon S3 will automatically and permanently delete files after 1 day, even if your backend server is offline.
 
 To instantly apply this rule to your bucket, ensure your `.env` is populated with your AWS credentials (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`) and run the included utility script:
 ```bash
 python setup_s3_lifecycle.py
 ```
-This script configures your S3 bucket to automatically expire all files after 7 days, and abort incomplete multipart uploads after 1 day.
+This script configures your S3 bucket to automatically expire all files after 1 day, and abort incomplete multipart uploads after 1 day.
 
 ---
 
