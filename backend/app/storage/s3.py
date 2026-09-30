@@ -34,14 +34,17 @@ class S3StorageService(StorageService):
             key_id = aws_access_key_id or settings.aws_access_key_id
             secret_key = aws_secret_access_key or settings.aws_secret_access_key
 
-            if key_id and secret_key:
-                client_kwargs["aws_access_key_id"] = key_id
-                client_kwargs["aws_secret_access_key"] = secret_key
+            if not key_id or not secret_key or not secret_key.strip():
+                raise ValueError("AWS credentials (access key and secret key) must be provided for S3 storage.")
+
+            client_kwargs["aws_access_key_id"] = key_id
+            client_kwargs["aws_secret_access_key"] = secret_key
 
             self.s3_client = boto3.client("s3", **client_kwargs)
 
         if not self.bucket_name:
             logger.warning("S3StorageService initialized without a bucket name!")
+
 
     async def upload(self, key: str, stream: AsyncIterator[bytes], size: int, mime_type: str | None) -> str:
         buffer = io.BytesIO()
