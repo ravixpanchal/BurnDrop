@@ -47,6 +47,10 @@ function FileReadyView({
   const totalSize = fileList.reduce((acc, f) => acc + f.size_bytes, 0);
 
   const handleDownloadAll = async () => {
+    if (fileList.length === 1) {
+      await handleDownloadSingle(fileList[0].id, fileList[0].filename);
+      return;
+    }
     setDownloadingAll(true);
     try {
       const zipName = data.filename.endsWith('.zip') ? data.filename : `${data.filename.replace(/\.[^/.]+$/, '')}.zip`;
@@ -152,7 +156,7 @@ function FileReadyView({
           <svg className={`h-4 w-4 ${downloadingAll ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          <span>{downloadingAll ? 'Packaging ZIP...' : 'Download All Files (.zip)'}</span>
+          <span>{downloadingAll ? 'Packaging ZIP...' : fileList.length === 1 ? 'Download file' : 'Download all (.zip)'}</span>
         </button>
       </div>
 

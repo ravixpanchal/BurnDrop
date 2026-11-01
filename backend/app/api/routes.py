@@ -3,9 +3,10 @@ import os
 from collections.abc import AsyncIterator
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import StreamingResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.datastructures import FormData, UploadFile
 
 from app.config.settings import get_settings
 from app.database import get_db
@@ -103,22 +104,33 @@ async def complete_direct_upload(
     )
 
 
+async def unlimited_file_form(request: Request):
+    # File count is unrestricted; ShareService enforces the combined byte limit.
+    # The context closes all temporary upload files after the response is built.
+    async with request.form(max_files=float("inf")) as form:
+        yield form
+
+
 @router.post("/shares", response_model=ShareCreateResponse, status_code=status.HTTP_201_CREATED)
 async def create_share(
     request: Request,
-    files: list[UploadFile] = File(default=[]),
-    file: UploadFile | None = File(default=None),
-    email: str = Form(...),
+    form: FormData = Depends(unlimited_file_form),
     db: AsyncSession = Depends(get_db),
     redis_client=Depends(get_redis),
 ):
     ip = get_client_ip(request)
     await upload_limiter.check(redis_client, ip)
 
+    files = [item for item in form.getlist("files") if isinstance(item, UploadFile)]
+    file = form.get("file")
+    email = form.get("email")
+    if not isinstance(email, str):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Recipient email is required.")
+
     upload_items: list[UploadFile] = []
     if files:
         upload_items.extend(files)
-    elif file and file.filename:
+    elif isinstance(file, UploadFile) and file.filename:
         upload_items.append(file)
 
     if not upload_items:

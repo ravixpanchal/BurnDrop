@@ -1,7 +1,7 @@
 """AWS S3 storage driver implementation."""
 
 import asyncio
-import io
+import tempfile
 import logging
 from collections.abc import AsyncIterator
 
@@ -47,24 +47,21 @@ class S3StorageService(StorageService):
 
 
     async def upload(self, key: str, stream: AsyncIterator[bytes], size: int, mime_type: str | None) -> str:
-        buffer = io.BytesIO()
-        async for chunk in stream:
-            buffer.write(chunk)
-        buffer.seek(0)
+        with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as buffer:
+            async for chunk in stream:
+                await asyncio.to_thread(buffer.write, chunk)
+            buffer.seek(0)
+            extra_args = {"ContentType": mime_type} if mime_type else {}
 
-        extra_args = {}
-        if mime_type:
-            extra_args["ContentType"] = mime_type
+            def _do_upload():
+                self.s3_client.upload_fileobj(
+                    Fileobj=buffer,
+                    Bucket=self.bucket_name,
+                    Key=key,
+                    ExtraArgs=extra_args or None,
+                )
 
-        def _do_upload():
-            self.s3_client.upload_fileobj(
-                Fileobj=buffer,
-                Bucket=self.bucket_name,
-                Key=key,
-                ExtraArgs=extra_args if extra_args else None,
-            )
-
-        await asyncio.to_thread(_do_upload)
+            await asyncio.to_thread(_do_upload)
         return key
 
     async def download(self, key: str) -> AsyncIterator[bytes]:
@@ -78,11 +75,14 @@ class S3StorageService(StorageService):
             logger.error("Failed to download file '%s' from S3: %s", key, e)
             raise FileNotFoundError(f"File key '{key}' not found in S3 bucket.") from e
 
-        while True:
-            chunk = await asyncio.to_thread(body.read, CHUNK_SIZE)
-            if not chunk:
-                break
-            yield chunk
+        try:
+            while True:
+                chunk = await asyncio.to_thread(body.read, CHUNK_SIZE)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            await asyncio.to_thread(body.close)
 
     async def delete(self, key: str) -> bool:
         def _do_delete():

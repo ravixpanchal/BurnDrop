@@ -98,7 +98,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
               <p className="font-bold text-slate-900 text-xs xs:text-sm sm:text-base flex items-center gap-2">
                 <span>{files.length} {files.length === 1 ? 'file' : 'files'} selected</span>
               </p>
-              <p className="text-xs xs:text-xs text-slate-500 mt-0.5">{formatBytes(totalSize)} total size</p>
+              <p className="text-xs xs:text-xs text-slate-500 mt-0.5">{formatBytes(totalSize)} of {formatBytes(maxFileSizeBytes)} used</p>
             </div>
             {!disabled && (
               <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
             Drop files here
           </h3>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-sm mx-auto px-2">
-            Or choose files from your device. Multiple files are welcome.
+            Select or drop files of different types together. No file-count limit — up to {formatBytes(maxFileSizeBytes)} combined.
           </p>
 
           {/* Primary Action Button */}
@@ -219,13 +219,13 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
           {/* Supported Format Pills */}
           <div className="mt-5 xs:mt-6 flex flex-wrap items-center justify-center gap-1.5 xs:gap-2 text-xs xs:text-xs text-slate-500">
             <span className="rounded-full bg-slate-100 px-2 xs:px-2.5 py-0.5 font-medium text-slate-600 border border-slate-200/60">
-              Documents
+              Any file type
             </span>
             <span className="rounded-full bg-slate-100 px-2 xs:px-2.5 py-0.5 font-medium text-slate-600 border border-slate-200/60">
-              Images
+              Multiple files
             </span>
             <span className="rounded-full bg-slate-100 px-2 xs:px-2.5 py-0.5 font-medium text-slate-600 border border-slate-200/60">
-              Archives
+              No count limit
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 border border-brand-200/80 px-2 xs:px-2.5 py-0.5 font-semibold text-brand-700">
               Total limit: {config.maxFileSizeMb >= 1024 ? '1 GB' : `${config.maxFileSizeMb} MB`}

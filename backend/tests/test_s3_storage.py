@@ -12,6 +12,9 @@ class FakeStreamingBody:
         self.content = content
         self.offset = 0
 
+    def close(self):
+        pass
+
     def read(self, chunk_size: int = 1024 * 1024):
         if self.offset >= len(self.content):
             return b""

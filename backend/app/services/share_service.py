@@ -462,54 +462,24 @@ class ShareService:
 
         return streamer(), filename, mime_type, size
 
-    async def stream_all_as_zip(self, share: Share) -> tuple[AsyncIterator[bytes], str, int]:
-        zip_buffer = io.BytesIO()
-        seen_filenames: dict[str, int] = {}
-
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            files_to_zip = share.files if share.files else []
-            if not files_to_zip:
-                # Fallback for legacy single file share
-                chunks = []
-                async for chunk in self.storage.download(share.storage_key):
-                    chunks.append(chunk)
-                file_bytes = b"".join(chunks)
-                zip_file.writestr(share.original_filename, file_bytes)
-            else:
-                for sf in files_to_zip:
-                    chunks = []
-                    async for chunk in self.storage.download(sf.storage_key):
-                        chunks.append(chunk)
-                    file_bytes = b"".join(chunks)
-                    rel_name = sf.original_filename
-                    if rel_name in seen_filenames:
-                        seen_filenames[rel_name] += 1
-                        base, ext = os.path.splitext(rel_name)
-                        rel_name = f"{base}_{seen_filenames[rel_name]}{ext}"
-                    else:
-                        seen_filenames[rel_name] = 1
-                    zip_file.writestr(rel_name, file_bytes)
-
-        zip_bytes = zip_buffer.getvalue()
-        zip_size = len(zip_bytes)
-
+    async def stream_all_as_zip(self, share: Share) -> tuple[AsyncIterator[bytes], str, str, None]:
+        """Stream an uncompressed ZIP without buffering the share or blocking on compression."""
         if share.files and len(share.files) > 1:
             first_name = os.path.basename(share.files[0].original_filename)
             base_first, _ = os.path.splitext(first_name)
             zip_filename = f"{base_first}_and_{len(share.files) - 1}_more.zip"
-        elif share.files and len(share.files) == 1:
-            base, _ = os.path.splitext(os.path.basename(share.files[0].original_filename))
-            zip_filename = f"{base}.zip"
         else:
             base, _ = os.path.splitext(os.path.basename(share.original_filename))
             zip_filename = f"{base}.zip"
 
-        async def streamer() -> AsyncIterator[bytes]:
-            chunk_size = 1024 * 1024
-            for i in range(0, len(zip_bytes), chunk_size):
-                yield zip_bytes[i : i + chunk_size]
+        from app.services.zip_stream import stream_zip_entries
 
-        return streamer(), zip_filename, "application/zip", zip_size
+        entries = [(sf.original_filename, sf.storage_key) for sf in share.files]
+        if not entries:
+            entries = [(share.original_filename, share.storage_key)]
+        streamer = stream_zip_entries(self.storage, entries)
+
+        return streamer, zip_filename, "application/zip", None
 
     async def stream_file(self, share: Share) -> AsyncIterator[bytes]:
         try:

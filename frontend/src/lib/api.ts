@@ -153,30 +153,37 @@ export async function uploadFiles(
         const totalSize = fileList.reduce((acc, f) => acc + f.size, 0);
         const loadedBytes = new Array(fileList.length).fill(0);
 
-        const uploadPromises = fileList.map((file, idx) => {
+        let grandTotalLoaded = 0;
+        const report = (idx: number, bytes: number) => {
+          const next = Math.min(fileList[idx].size, bytes);
+          grandTotalLoaded += next - loadedBytes[idx];
+          loadedBytes[idx] = next;
+          onProgress(totalSize ? Math.min(100, Math.floor(grandTotalLoaded / totalSize * 100)) : 100, grandTotalLoaded, totalSize);
+        };
+        // A small pool avoids flooding the browser and storage with thousands of requests.
+        const transferController = new AbortController();
+        const cancelTransfers = () => transferController.abort();
+        signal?.addEventListener('abort', cancelTransfers, { once: true });
+        if (signal?.aborted) transferController.abort();
+        const transferSignal = transferController.signal;
+        const uploadOne = (file: File, idx: number) => {
           const item = presignedData.upload_urls[idx];
           return new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            if (signal?.aborted) { reject(new DOMException('Upload cancelled', 'AbortError')); return; }
+            if (transferSignal.aborted) { reject(new DOMException('Upload cancelled', 'AbortError')); return; }
             const abort = () => xhr.abort();
-            signal?.addEventListener('abort', abort, { once: true });
-            xhr.addEventListener('loadend', () => signal?.removeEventListener('abort', abort));
+            transferSignal.addEventListener('abort', abort, { once: true });
+            xhr.addEventListener('loadend', () => transferSignal.removeEventListener('abort', abort));
             xhr.addEventListener('abort', () => reject(new DOMException('Upload cancelled', 'AbortError')));
             xhr.upload.addEventListener('progress', (e) => {
               if (e.lengthComputable) {
-                loadedBytes[idx] = e.loaded;
-                const grandTotalLoaded = loadedBytes.reduce((a, b) => a + b, 0);
-                const percent = Math.min(100, Math.round((grandTotalLoaded / totalSize) * 100));
-                onProgress(percent, grandTotalLoaded, totalSize);
+                report(idx, e.loaded);
               }
             });
 
             xhr.addEventListener('load', () => {
               if (xhr.status >= 200 && xhr.status < 300) {
-                loadedBytes[idx] = file.size;
-                const grandTotalLoaded = loadedBytes.reduce((a, b) => a + b, 0);
-                const percent = Math.min(100, Math.round((grandTotalLoaded / totalSize) * 100));
-                onProgress(percent, grandTotalLoaded, totalSize);
+                report(idx, file.size);
                 resolve();
               } else {
                 reject(new ApiError(xhr.status, `Direct upload to cloud storage failed for ${file.name}`));
@@ -193,9 +200,23 @@ export async function uploadFiles(
             }
             xhr.send(file);
           });
-        });
-
-        await Promise.all(uploadPromises);
+        };
+        let nextIndex = 0;
+        const worker = async () => {
+          while (nextIndex < fileList.length && !transferSignal.aborted) {
+            const idx = nextIndex++;
+            await uploadOne(fileList[idx], idx);
+          }
+        };
+        try {
+          await Promise.all(Array.from({ length: Math.min(4, fileList.length) }, worker));
+        } catch (error) {
+          transferController.abort();
+          throw error;
+        } finally {
+          signal?.removeEventListener('abort', cancelTransfers);
+        }
+        if (signal?.aborted) throw new DOMException('Upload cancelled', 'AbortError');
 
         const completeRes = await fetch(`${config.apiUrl}/api/shares/complete`, {
           signal,
