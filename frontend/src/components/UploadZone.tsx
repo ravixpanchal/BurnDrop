@@ -11,6 +11,7 @@ interface UploadZoneProps {
 }
 
 export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) {
+  const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -26,10 +27,11 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
 
       const totalSize = combined.reduce((acc, f) => acc + f.size, 0);
       if (totalSize > maxFileSizeBytes) {
-        alert('Combined size exceeds maximum supported limit of 1 GB.');
+        setError(`Combined size exceeds ${formatBytes(maxFileSizeBytes)}. Remove a file or choose smaller files.`);
         return;
       }
 
+      setError('');
       onFilesSelect(combined);
     },
     [files, onFilesSelect],
@@ -58,7 +60,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
   const getBadgeColor = (filename: string) => {
     const ext = getFileExtension(filename).toUpperCase();
     if (['JPG', 'JPEG', 'PNG', 'GIF', 'WEBP', 'SVG'].includes(ext)) {
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-brand-100 text-brand-800 border-brand-200';
     }
     if (['PDF'].includes(ext)) {
       return 'bg-rose-100 text-rose-800 border-rose-200';
@@ -74,6 +76,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
 
   return (
     <div className="space-y-4">
+      {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</p>}
       <input
         ref={inputRef}
         type="file"
@@ -89,20 +92,20 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
       />
 
       {files.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-3.5 xs:p-4 sm:p-6 shadow-md backdrop-blur-sm transition-all">
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-3.5 xs:p-4 sm:p-6 shadow-sm backdrop-blur-sm transition-all">
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3 border-b border-slate-100 pb-3">
             <div>
               <p className="font-bold text-slate-900 text-xs xs:text-sm sm:text-base flex items-center gap-2">
-                <span>📁 {files.length} {files.length === 1 ? 'file' : 'files'} selected</span>
+                <span>{files.length} {files.length === 1 ? 'file' : 'files'} selected</span>
               </p>
-              <p className="text-[11px] xs:text-xs text-slate-500 mt-0.5">{formatBytes(totalSize)} total size</p>
+              <p className="text-xs xs:text-xs text-slate-500 mt-0.5">{formatBytes(totalSize)} total size</p>
             </div>
             {!disabled && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => inputRef.current?.click()}
-                  className="inline-flex items-center gap-1 rounded-xl bg-blue-50 border border-blue-200/80 px-2.5 py-1.5 xs:px-3 xs:py-2 text-xs font-bold text-blue-600 hover:bg-blue-600 hover:text-white hover:border-transparent transition-all duration-200 shadow-xs min-h-[36px] xs:min-h-[40px]"
+                  className="inline-flex items-center gap-1 rounded-xl bg-brand-50 border border-brand-200/80 px-2.5 py-1.5 xs:px-3 xs:py-2 text-xs font-bold text-brand-600 hover:bg-brand-600 hover:text-white hover:border-transparent transition-all duration-200 shadow-xs min-h-[36px] xs:min-h-[40px]"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -130,7 +133,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
                 <div className="min-w-0 flex-1 flex items-center gap-2 xs:gap-3">
                   <span
                     className={clsx(
-                      'shrink-0 rounded-lg border px-1.5 xs:px-2 py-0.5 xs:py-1 text-[10px] xs:text-[11px] font-extrabold uppercase tracking-wider shadow-xs',
+                      'shrink-0 rounded-lg border px-1.5 xs:px-2 py-0.5 xs:py-1 text-xs xs:text-xs font-extrabold uppercase tracking-wider shadow-xs',
                       getBadgeColor(file.name),
                     )}
                   >
@@ -140,7 +143,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
                     <p className="truncate text-xs sm:text-sm font-semibold text-slate-800 break-word-all" title={file.name}>
                       {file.name}
                     </p>
-                    <p className="text-[10px] xs:text-[11px] text-slate-400">{formatBytes(file.size)}</p>
+                    <p className="text-xs xs:text-xs text-slate-600">{formatBytes(file.size)}</p>
                   </div>
                 </div>
 
@@ -148,7 +151,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
                   <button
                     type="button"
                     onClick={() => removeFile(idx)}
-                    className="shrink-0 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-2 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    className="shrink-0 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 p-2 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                     aria-label={`Remove ${file.name}`}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,17 +174,16 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
           className={clsx(
             'group relative overflow-hidden rounded-2xl border-2 border-dashed p-4 xs:p-6 sm:p-10 text-center transition-all duration-300',
             dragOver
-              ? 'border-blue-500 bg-blue-50/90 shadow-xl shadow-blue-500/10 ring-4 ring-blue-500/20 scale-[1.01]'
-              : 'border-slate-300/90 bg-gradient-to-b from-white via-slate-50/40 to-slate-100/50 hover:border-blue-400 hover:bg-blue-50/20 hover:shadow-md',
+              ? 'border-brand-500 bg-brand-50/90 shadow-sm  ring-4 ring-brand-500/20 scale-[1.01]'
+              : 'border-slate-300/90 bg-white hover:border-brand-400 hover:bg-brand-50/20 shadow-sm',
             disabled && 'opacity-50 cursor-not-allowed',
           )}
         >
           {/* Ambient background decoration */}
-          <div className="pointer-events-none absolute inset-0 bg-radial-gradient from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
           {/* Animated Upload Icon */}
-          <div className="relative mx-auto mb-3 xs:mb-4 flex h-12 w-12 xs:h-14 xs:w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-blue-500/30 group-hover:scale-110 group-hover:rotate-1 transition-all duration-300">
-            <svg className="h-6 w-6 xs:h-7 xs:w-7 sm:h-8 sm:w-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="relative mx-auto mb-3 xs:mb-4 flex h-12 w-12 xs:h-14 xs:w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm    transition-all duration-300">
+            <svg className="h-6 w-6 xs:h-7 xs:w-7 sm:h-8 sm:w-8 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -192,11 +194,11 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
           </div>
 
           {/* Title & Instructions */}
-          <h3 className="text-sm xs:text-base sm:text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
-            Drop files here or click to browse
+          <h3 className="text-sm xs:text-base sm:text-lg font-bold text-slate-800 group-hover:text-brand-600 transition-colors">
+            Drop files here
           </h3>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-sm mx-auto px-2">
-            Select multiple images, PDFs, archives, or code files to generate a secure code.
+            Or choose files from your device. Multiple files are welcome.
           </p>
 
           {/* Primary Action Button */}
@@ -205,7 +207,7 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
               type="button"
               disabled={disabled}
               onClick={() => inputRef.current?.click()}
-              className="w-full xs:w-auto inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-5 xs:px-6 py-3 xs:py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 hover:scale-105 active:scale-95 transition-all duration-200 ring-2 ring-blue-500/20 min-h-[44px]"
+              className="w-full xs:w-auto inline-flex items-center justify-center gap-2.5 rounded-xl bg-brand-600 px-5 xs:px-6 py-3 xs:py-3.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 ring-2 ring-brand-500/20 min-h-[44px]"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -215,18 +217,18 @@ export function UploadZone({ files, onFilesSelect, disabled }: UploadZoneProps) 
           </div>
 
           {/* Supported Format Pills */}
-          <div className="mt-5 xs:mt-6 flex flex-wrap items-center justify-center gap-1.5 xs:gap-2 text-[10px] xs:text-[11px] text-slate-500">
+          <div className="mt-5 xs:mt-6 flex flex-wrap items-center justify-center gap-1.5 xs:gap-2 text-xs xs:text-xs text-slate-500">
             <span className="rounded-full bg-slate-100 px-2 xs:px-2.5 py-0.5 font-medium text-slate-600 border border-slate-200/60">
-              📄 Documents
+              Documents
             </span>
             <span className="rounded-full bg-slate-100 px-2 xs:px-2.5 py-0.5 font-medium text-slate-600 border border-slate-200/60">
-              🖼️ Images
+              Images
             </span>
             <span className="rounded-full bg-slate-100 px-2 xs:px-2.5 py-0.5 font-medium text-slate-600 border border-slate-200/60">
-              📦 Archives
+              Archives
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200/80 px-2 xs:px-2.5 py-0.5 font-semibold text-blue-700">
-              ⚡ Max Total: {config.maxFileSizeMb >= 1024 ? '1 GB' : `${config.maxFileSizeMb} MB`}
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 border border-brand-200/80 px-2 xs:px-2.5 py-0.5 font-semibold text-brand-700">
+              Total limit: {config.maxFileSizeMb >= 1024 ? '1 GB' : `${config.maxFileSizeMb} MB`}
             </span>
           </div>
         </div>

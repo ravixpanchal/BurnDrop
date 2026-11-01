@@ -51,9 +51,14 @@ async function uploadFilesMultipart(
   fileList: File[],
   email: string,
   onProgress: (percent: number, loaded: number, total: number) => void,
+  signal?: AbortSignal,
 ): Promise<ShareCreateResponse> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    if (signal?.aborted) { reject(new DOMException("Upload cancelled", "AbortError")); return; }
+    const abort = () => xhr.abort();
+    signal?.addEventListener("abort", abort, { once: true });
+    xhr.addEventListener("loadend", () => signal?.removeEventListener("abort", abort));
     const formData = new FormData();
     fileList.forEach((f) => {
       const relPath = (f as any).webkitRelativePath || f.name;
@@ -112,12 +117,14 @@ export async function uploadFiles(
   files: File | File[],
   email: string,
   onProgress: (percent: number, loaded: number, total: number) => void,
+  signal?: AbortSignal,
 ): Promise<ShareCreateResponse> {
   const fileList = Array.isArray(files) ? files : [files];
   if (fileList.length === 0) {
     throw new ApiError(400, 'No files provided');
   }
 
+  let directUploadStarted = false;
   try {
     const presignedReqBody = {
       email,
@@ -129,6 +136,7 @@ export async function uploadFiles(
     };
 
     const presignedRes = await fetch(`${config.apiUrl}/api/shares/presigned`, {
+      signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(presignedReqBody),
@@ -141,6 +149,7 @@ export async function uploadFiles(
         Array.isArray(presignedData.upload_urls) &&
         presignedData.upload_urls.length === fileList.length
       ) {
+        directUploadStarted = true;
         const totalSize = fileList.reduce((acc, f) => acc + f.size, 0);
         const loadedBytes = new Array(fileList.length).fill(0);
 
@@ -148,6 +157,11 @@ export async function uploadFiles(
           const item = presignedData.upload_urls[idx];
           return new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
+            if (signal?.aborted) { reject(new DOMException('Upload cancelled', 'AbortError')); return; }
+            const abort = () => xhr.abort();
+            signal?.addEventListener('abort', abort, { once: true });
+            xhr.addEventListener('loadend', () => signal?.removeEventListener('abort', abort));
+            xhr.addEventListener('abort', () => reject(new DOMException('Upload cancelled', 'AbortError')));
             xhr.upload.addEventListener('progress', (e) => {
               if (e.lengthComputable) {
                 loadedBytes[idx] = e.loaded;
@@ -184,6 +198,7 @@ export async function uploadFiles(
         await Promise.all(uploadPromises);
 
         const completeRes = await fetch(`${config.apiUrl}/api/shares/complete`, {
+          signal,
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -203,12 +218,14 @@ export async function uploadFiles(
       }
     }
   } catch (err) {
+    if (signal?.aborted) throw new DOMException('Upload cancelled', 'AbortError');
+    if (directUploadStarted) throw err;
     if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
       throw err;
     }
   }
 
-  return uploadFilesMultipart(fileList, email, onProgress);
+  return uploadFilesMultipart(fileList, email, onProgress, signal);
 }
 
 export function uploadFile(
