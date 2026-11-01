@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import router
 from app.config.settings import get_settings
-from app.database import async_session_factory, engine
+from app import database
 from app.models import Base
 from app.security.rate_limit import close_redis
 from app.storage import get_storage_service
@@ -20,17 +20,16 @@ logger = logging.getLogger(__name__)
 
 async def init_database() -> None:
     """Initialize database tables with automatic SQLite fallback if primary DB is unreachable."""
-    from app.database import engine, set_engine_and_factory
-
     try:
-        async with engine.begin() as conn:
+        async with database.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     except Exception as exc:
         logger.warning("Primary database connection failed (%s); falling back to local SQLite database.", exc)
         from sqlalchemy.ext.asyncio import create_async_engine
 
         fallback_engine = create_async_engine("sqlite+aiosqlite:///burndrop_dev.db", echo=False)
-        set_engine_and_factory(fallback_engine)
+        await database.engine.dispose()
+        database.set_engine_and_factory(fallback_engine)
         async with fallback_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
@@ -42,7 +41,7 @@ async def lifespan(app: FastAPI):
     await init_database()
 
     storage = get_storage_service()
-    cleanup_task = asyncio.create_task(cleanup_loop(async_session_factory, storage))
+    cleanup_task = asyncio.create_task(cleanup_loop(database.async_session_factory, storage))
     logger.info("%s backend started", settings.app_name)
 
     yield
@@ -53,7 +52,7 @@ async def lifespan(app: FastAPI):
     except asyncio.CancelledError:
         pass
     await close_redis()
-    await engine.dispose()
+    await database.engine.dispose()
 
 
 def create_app() -> FastAPI:

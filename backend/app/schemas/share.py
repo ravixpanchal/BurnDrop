@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class ShareCreateResponse(BaseModel):
@@ -9,6 +9,13 @@ class ShareCreateResponse(BaseModel):
     size_bytes: int
     expires_at: datetime
     email_sent: bool
+
+    @field_validator("expires_at")
+    @classmethod
+    def expiry_in_utc(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
 
 
 class VerifyCodeRequest(BaseModel):

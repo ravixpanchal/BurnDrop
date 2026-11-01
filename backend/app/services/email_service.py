@@ -1,6 +1,7 @@
 """Email service for sending share codes."""
 
 import logging
+from html import escape
 
 import aiosmtplib
 from email.mime.multipart import MIMEMultipart
@@ -13,217 +14,84 @@ logger = logging.getLogger(__name__)
 
 def render_share_email(code: str, app_name: str, app_base_url: str, expiration_hours: int) -> tuple[str, str, str]:
     retrieve_url = f"{app_base_url.rstrip('/')}/retrieve"
-    subject = f"🔐 Your {app_name} One-Time Access Code: {code}"
+    subject = f"Your {app_name} sharing code: {code}"
+    text = f"""Your files are ready to receive.
 
-    text = f"""Thanks for using {app_name}!
+Someone shared files with you using {app_name}.
+Your one-time access code: {code}
 
-Your One-Time Access Code is: {code}
+Open {retrieve_url} and enter the code to access your files.
+Access expires {expiration_hours} hours after the share was created.
 
-Direct Retrieval Link: {retrieve_url}
+Keep this code private. Anyone with the code can access the shared files.
+If you weren't expecting this email, you can ignore it.
 
-IMPORTANT DETAILS:
-- Valid for {expiration_hours} hours only.
-- Single-use access (file auto-destructs after consumption).
-- If you didn't receive this email directly in your inbox, please check your Spam/Junk folder.
-- Do not share this code publicly or with unauthorized persons.
-
-Powered by {app_name} - Share once • Keep it temporary.
+{app_name} — Share once. Keep it temporary.
 """
-
+    name, pin, url = escape(app_name), escape(code), escape(retrieve_url, quote=True)
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your {app_name} Access Code</title>
-  <style>
-    /* ── Reset ── */
-    body, table, td, a {{ -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }}
-    table, td {{ mso-table-lspace: 0pt; mso-table-rspace: 0pt; }}
-    img {{ -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }}
-
-    /* ── Responsive overrides (≤ 600px) ── */
-    @media only screen and (max-width: 600px) {{
-      .email-wrapper {{ padding: 16px 8px !important; }}
-      .email-card   {{ border-radius: 16px !important; }}
-
-      /* Header & body padding */
-      .header-td  {{ padding: 24px 20px 16px 20px !important; }}
-      .body-td    {{ padding: 0 20px 20px 20px !important; }}
-      .footer-td  {{ padding: 20px !important; }}
-
-      /* Headings */
-      .h2         {{ font-size: 17px !important; }}
-
-      /* PIN code */
-      .pin-code   {{ font-size: 28px !important; letter-spacing: 4px !important; }}
-
-      /* CTA button — full width on mobile */
-      .cta-td     {{ padding: 0 !important; }}
-      .cta-btn    {{
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        padding: 15px 20px !important;
-        text-align: center !important;
-        border-radius: 12px !important;
-      }}
-
-      /* Badges — stack vertically */
-      .badges-td  {{ font-size: 12px !important; }}
-      .badge-sep  {{ display: none !important; }}
-      .badge-item {{ display: block !important; margin-bottom: 4px !important; }}
-    }}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Your {name} sharing code</title>
+<style>
+body,table,td,a {{ -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }}
+table,td {{ mso-table-lspace:0; mso-table-rspace:0; }}
+@media only screen and (min-width:601px) {{
+ .outer {{ padding:40px 20px !important; }}
+ .content {{ padding:36px 36px 32px !important; }}
+ .footer {{ padding:22px 36px !important; }}
+ .title {{ font-size:30px !important; }}
+ .code {{ font-size:36px !important; line-height:44px !important; letter-spacing:5px !important; }}
+}}
+@media only screen and (max-width:360px) {{
+ .outer {{ padding:12px 8px !important; }}
+ .content {{ padding:24px 16px !important; }}
+ .footer {{ padding:20px 16px !important; }}
+ .title {{ font-size:24px !important; }}
+ .code {{ font-size:25px !important; line-height:36px !important; letter-spacing:2px !important; }}
+}}
+</style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-         class="email-wrapper" style="background-color: #f1f5f9; padding: 30px 15px;">
-    <tr>
-      <td align="center">
-
-        <!-- ░░ CARD ░░ -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-               class="email-card"
-               style="max-width: 560px; background-color: #ffffff; border-radius: 20px; overflow: hidden;
-                      box-shadow: 0 10px 25px -5px rgba(15,23,42,.08), 0 8px 10px -6px rgba(15,23,42,.04);
-                      border: 1px solid #e2e8f0;">
-
-          <!-- ACCENT BAR -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%);
-                       height: 8px; font-size: 0; line-height: 0;">&nbsp;</td>
-          </tr>
-
-          <!-- HEADER -->
-          <tr>
-            <td class="header-td" style="padding: 36px 36px 24px 36px; text-align: center;">
-              <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 14px;
-                             width: 44px; height: 44px; text-align: center; vertical-align: middle;
-                             color: #ffffff; font-size: 22px; line-height: 44px; font-weight: bold;">
-                    🔥
-                  </td>
-                  <td style="padding-left: 12px; text-align: left;">
-                    <span style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; display: block; line-height: 1;">{app_name}</span>
-                    <span style="font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 0.5px; display: block; margin-top: 4px;">SHARE ONCE &bull; KEEP IT TEMPORARY</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- BODY -->
-          <tr>
-            <td class="body-td" style="padding: 0 36px 24px 36px;">
-
-              <h2 class="h2" style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color: #0f172a; text-align: center;">
-                Your Secure File is Ready 📦
-              </h2>
-              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #475569; text-align: center;">
-                You have received a secure, temporary file transfer. Use the one-time PIN code below to unlock and download your file.
-              </p>
-
-              <!-- PIN CODE BOX -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-                     style="background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
-                            border: 2px dashed #93c5fd; border-radius: 16px; margin-bottom: 24px;">
-                <tr>
-                  <td style="padding: 24px; text-align: center;">
-                    <span style="display: inline-block; background-color: #dbeafe; color: #1e40af;
-                                 font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
-                                 text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">
-                      🔑 ONE-TIME PIN CODE
-                    </span>
-                    <div class="pin-code"
-                         style="font-family: 'SF Mono', 'Roboto Mono', Menlo, Consolas, Monaco, monospace;
-                                font-size: 36px; font-weight: 900; letter-spacing: 6px; color: #0f172a;
-                                line-height: 1.2; margin: 6px 0 12px 0; word-break: break-all;">
-                      {code}
-                    </div>
-                    <p style="margin: 0; font-size: 12px; color: #64748b; font-weight: 500;">
-                      Enter this code on the download page to unlock your file.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- CTA BUTTON -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-                     style="margin-bottom: 24px;">
-                <tr>
-                  <td class="cta-td" align="center">
-                    <a href="{retrieve_url}" target="_blank" class="cta-btn"
-                       style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-                              color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none;
-                              padding: 14px 36px; border-radius: 14px;
-                              box-shadow: 0 4px 14px rgba(37,99,235,.35); text-align: center;">
-                      Unlock &amp; Download File &rarr;
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- SPAM ALERT -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-                     style="background-color: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 14px; margin-bottom: 24px;">
-                <tr>
-                  <td style="padding: 16px;">
-                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td width="28" valign="top" style="font-size: 18px; line-height: 1.4;">📥</td>
-                        <td style="font-size: 13px; line-height: 1.5; color: #78350f; font-weight: 600;">
-                          <strong style="color: #92400e;">Did not receive the mail in your inbox?</strong>
-                          Please check your <span style="text-decoration: underline;">Spam or Junk folder</span> for the code.
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- BADGES ROW -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-                     style="background-color: #f8fafc; border-radius: 12px; margin-bottom: 8px;">
-                <tr>
-                  <td class="badges-td" style="padding: 14px; font-size: 12px; color: #64748b; line-height: 1.8; text-align: center;">
-                    <span class="badge-item">⏱️ <strong style="color: #334155;">Expires in {expiration_hours} hours</strong></span>
-                    <span class="badge-sep">&nbsp;&bull;&nbsp;</span>
-                    <span class="badge-item">🔥 <strong style="color: #334155;">Single-Use Only</strong></span>
-                    <span class="badge-sep">&nbsp;&bull;&nbsp;</span>
-                    <span class="badge-item">🛡️ <strong style="color: #334155;">Encrypted</strong></span>
-                  </td>
-                </tr>
-              </table>
-
-            </td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td class="footer-td"
-                style="background-color: #f8fafc; padding: 24px 36px; border-top: 1px solid #e2e8f0; text-align: center;">
-              <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; font-weight: 500;">
-                {app_name} &bull; Secure Temporary File Sharing Service
-              </p>
-              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                This email was sent because a file share was created for your address. If you did not request this, you can safely ignore it.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-        <!-- ░░ END CARD ░░ -->
-
-      </td>
-    </tr>
-  </table>
-</body>
-</html>"""
-
-    return subject, text, html  # type: ignore[return-value]
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+<div style="display:none;font-size:1px;line-height:1px;color:#f8fafc;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Your sharing code is {pin}. Access expires {expiration_hours} hours after creation.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;">
+<tr><td class="outer" align="center" style="padding:20px 12px;">
+<!--[if mso]><table role="presentation" width="560" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;max-width:560px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:16px;">
+<tr><td class="content" style="padding:28px 20px;overflow-wrap:break-word;word-wrap:break-word;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td width="40" height="40" align="center" style="width:40px;height:40px;background-color:#0f172a;border-radius:10px;font-size:22px;line-height:40px;font-weight:700;color:#ffffff;">B</td>
+<td style="padding-left:12px;font-size:21px;font-weight:700;letter-spacing:-0.5px;color:#0f172a;">{name}</td>
+</tr></table>
+<p style="margin:32px 0 10px;font-size:13px;line-height:20px;font-weight:600;color:#6d28d9;">Simple sharing. Temporary access.</p>
+<h1 class="title" style="margin:0;font-size:26px;line-height:1.25;letter-spacing:-0.7px;font-weight:700;color:#0f172a;">Your files are ready.</h1>
+<p style="margin:16px 0 26px;font-size:15px;line-height:24px;color:#475569;">Someone shared files with you. Enter the code below on {name} to view or download them.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;">
+<tr><td align="center" style="padding:24px 12px;">
+<p style="margin:0 0 12px;font-size:13px;line-height:20px;font-weight:600;color:#6d28d9;">One-time access code</p>
+<p class="code" style="margin:0;font-family:Consolas,Menlo,monospace;font-size:28px;line-height:40px;letter-spacing:2px;overflow-wrap:anywhere;word-wrap:break-word;font-weight:700;color:#0f172a;">{pin}</p>
+</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td align="center" bgcolor="#7c3aed" style="background-color:#7c3aed;border-radius:8px;mso-padding-alt:16px 28px;">
+<a class="button" href="{url}" style="display:block;padding:16px 12px;min-height:20px;font-size:15px;line-height:20px;font-weight:600;text-decoration:none;color:#ffffff;border-radius:8px;">Receive files &rarr;</a>
+</td></tr></table>
+<p style="margin:14px 0 0;text-align:center;font-size:13px;line-height:21px;color:#475569;">Access expires {expiration_hours} hours after this share was created.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:28px;border-top:1px solid #e2e8f0;"><tr><td style="padding-top:20px;">
+<p style="margin:0;font-size:13px;line-height:21px;color:#475569;"><strong style="color:#334155;">Keep your code private.</strong> Anyone with this code can access the shared files.</p>
+<p style="margin:14px 0 0;font-size:12px;line-height:20px;color:#64748b;">Button not working? Open <a href="{url}" style="color:#6d28d9;text-decoration:underline;word-break:break-all;">{url}</a> and enter your code.</p>
+</td></tr></table>
+</td></tr>
+<tr><td class="footer" style="padding:22px 20px;border-top:1px solid #e2e8f0;text-align:center;">
+<p style="margin:0;font-size:13px;line-height:20px;font-weight:600;color:#334155;">{name}</p>
+<p style="margin:5px 0 14px;font-size:12px;line-height:20px;color:#64748b;">Share once. Keep it temporary.</p>
+<p style="margin:0;font-size:12px;line-height:20px;color:#64748b;">Sent because a share was created for your address.<br>If you weren’t expecting this email, you can ignore it.</p>
+</td></tr></table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table>
+</body></html>"""
+    return subject, text, html
 
 
 async def _send_via_resend(to_email: str, subject: str, html: str, settings) -> bool:

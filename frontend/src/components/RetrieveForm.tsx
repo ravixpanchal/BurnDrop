@@ -127,7 +127,7 @@ function FileReadyView({
             <svg className="h-3.5 w-3.5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Expires: <span className="font-mono">{countdown}</span>
+            Time remaining: <span className="font-mono">{expired ? "Check on download" : countdown}</span>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300/80 bg-emerald-100/90 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-800 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 "></span>
@@ -150,7 +150,7 @@ function FileReadyView({
 
         <button
           onClick={handleDownloadAll}
-          disabled={expired || downloadingAll || downloadingId !== null}
+          disabled={downloadingAll || downloadingId !== null}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 xs:py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 ring-2 ring-brand-500/20 disabled:opacity-50 disabled:"
         >
           <svg className={`h-4 w-4 ${downloadingAll ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +160,7 @@ function FileReadyView({
         </button>
       </div>
 
-      <p role="status" className="mt-4 text-sm text-slate-700">{expired ? "This share has expired. Ask the sender for a new code." : notice}</p>
+      <p role="status" className="mt-4 text-sm text-slate-700">{expired ? "Your device estimates this share has expired. Try downloading to check with the server." : notice}</p>
 
       {/* File List Container */}
       <div className="relative z-10 mt-5 sm:mt-6 rounded-2xl border border-slate-200/90 bg-white shadow-sm overflow-hidden">
@@ -197,7 +197,7 @@ function FileReadyView({
                 {file.can_preview && (
                   <button
                     onClick={() => handleViewSingle(file.id)}
-                    disabled={expired || downloadingAll || downloadingId !== null}
+                    disabled={downloadingAll || downloadingId !== null}
                     className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-700 shadow-xs hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition-all disabled:opacity-50 min-h-[40px] sm:min-h-[36px]"
                   >
                     <svg className="h-3.5 w-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,7 +209,7 @@ function FileReadyView({
                 )}
                 <button
                   onClick={() => handleDownloadSingle(file.id, file.filename)}
-                  disabled={expired || downloadingAll || downloadingId !== null}
+                  disabled={downloadingAll || downloadingId !== null}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-brand-600 text-white shadow-sm transition-all disabled:opacity-50 min-h-[40px] sm:min-h-[36px]"
                 >
                   <svg className={`h-3.5 w-3.5 shrink-0 ${downloadingId === file.id ? 'animate-bounce' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

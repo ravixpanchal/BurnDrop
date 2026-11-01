@@ -386,7 +386,7 @@ class ShareService:
             "filename": share.original_filename,
             "size_bytes": share.file_size,
             "mime_type": share.mime_type,
-            "expires_at": share.expires_at.isoformat(),
+            "expires_at": expires.astimezone(UTC).isoformat(),
             "can_preview": any(f["can_preview"] for f in file_items),
             "files": file_items,
         }

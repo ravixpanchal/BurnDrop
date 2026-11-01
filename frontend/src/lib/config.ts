@@ -23,7 +23,12 @@ export function formatBytes(bytes: number): string {
 }
 
 export function formatExpiryCountdown(expiresAt: string): string {
-  const diff = new Date(expiresAt).getTime() - Date.now();
+  // Older API responses from SQLite omit the timezone; stored times are UTC.
+  const value = expiresAt.trim();
+  const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : `${value}Z`;
+  const expiry = Date.parse(timestamp);
+  if (!Number.isFinite(expiry)) return 'Unavailable';
+  const diff = expiry - Date.now();
   if (diff <= 0) return 'Expired';
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
