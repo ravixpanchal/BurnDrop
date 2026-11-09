@@ -27,6 +27,7 @@ class S3StorageService(StorageService):
 
         if s3_client is not None:
             self.s3_client = s3_client
+            self.presign_client = s3_client
         else:
             import boto3
 
@@ -41,6 +42,18 @@ class S3StorageService(StorageService):
             client_kwargs["aws_secret_access_key"] = secret_key
 
             self.s3_client = boto3.client("s3", **client_kwargs)
+            self.presign_client = self.s3_client
+            if settings.aws_s3_transfer_acceleration and self.bucket_name:
+                from botocore.config import Config
+
+                if "." in self.bucket_name:
+                    logger.warning("S3 Transfer Acceleration requires a bucket name without periods.")
+                else:
+                    self.presign_client = boto3.client(
+                        "s3",
+                        config=Config(s3={"use_accelerate_endpoint": True}),
+                        **client_kwargs,
+                    )
 
         if not self.bucket_name:
             logger.warning("S3StorageService initialized without a bucket name!")
@@ -130,7 +143,7 @@ class S3StorageService(StorageService):
             extra_params["ContentType"] = mime_type
 
         def _gen():
-            return self.s3_client.generate_presigned_url(
+            return self.presign_client.generate_presigned_url(
                 ClientMethod="put_object",
                 Params=extra_params,
                 ExpiresIn=expires_in,
@@ -159,7 +172,7 @@ class S3StorageService(StorageService):
         }
 
         def _gen():
-            return self.s3_client.generate_presigned_url(
+            return self.presign_client.generate_presigned_url(
                 ClientMethod="get_object",
                 Params=extra_params,
                 ExpiresIn=expires_in,

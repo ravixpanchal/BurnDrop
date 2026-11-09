@@ -238,6 +238,7 @@ Copy `.env.example` to `.env` and set your environment configurations:
 | `FILE_EXPIRATION_HOURS` | `3` | Hours before files automatically expire and burn |
 | `STORAGE_BACKEND` | `s3` | Storage engine choice (`local`, `s3`, or `google_drive`) |
 | `AWS_S3_BUCKET_NAME` | `your_s3_bucket` | Bucket name when `STORAGE_BACKEND=s3` |
+| `AWS_S3_TRANSFER_ACCELERATION` | `false` | Use accelerated S3 URLs for browser uploads and individual downloads. Enable Transfer Acceleration on a supported, dot-free bucket first. AWS may charge for accelerated transfers. |
 | `GOOGLE_DRIVE_FOLDER_ID`| `folder_id` | Folder ID when `STORAGE_BACKEND=google_drive` |
 
 ### Email Driver Configurations

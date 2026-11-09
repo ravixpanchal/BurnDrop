@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "us-east-1"
     aws_s3_bucket_name: str = ""
+    aws_s3_transfer_acceleration: bool = False
 
     email_from: str = "ravi.panchal.kaithi@gmail.com"
     email_username: str = "ravi.panchal.kaithi@gmail.com"

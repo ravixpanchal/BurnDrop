@@ -5,6 +5,7 @@ from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.models.share import Share, ShareStatus
 
@@ -23,8 +24,10 @@ class ShareRepository:
         return result.scalar_one_or_none()
 
     async def get_by_share_id(self, share_id: UUID) -> Share | None:
-        result = await self.session.execute(select(Share).where(Share.share_id == share_id))
-        return result.scalar_one_or_none()
+        result = await self.session.execute(
+            select(Share).options(joinedload(Share.files)).where(Share.share_id == share_id)
+        )
+        return result.unique().scalar_one_or_none()
 
     async def get_by_share_id_for_update(self, share_id: UUID) -> Share | None:
         result = await self.session.execute(

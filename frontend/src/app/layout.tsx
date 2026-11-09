@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href={config.apiUrl} crossOrigin="anonymous" />
         <link rel="icon" href="/logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
